@@ -24,13 +24,16 @@ namespace TurismoRural_API.Controllers
         public IActionResult CambiarAcceso(SeguridadRequest model)
         {
             var consecutivo = User.FindFirst("consecutivo")?.Value;
+            if (!int.TryParse(consecutivo, out var idUsuario))
+                return Unauthorized("Token inválido");
 
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
-            parametros.Add("@Consecutivo", consecutivo);
-            parametros.Add("@Contrasenna", model.NuevaContrasenna);
+            parametros.Add("@ID_Usuario", idUsuario);
+            parametros.Add("@Contrasena", model.NuevaContrasenna);
 
-            var result = context.Execute("sp_ActualizarContrasenna", parametros);
+            var result = context.Execute(
+                "UPDATE Usuario SET Contrasena = @Contrasena WHERE ID_Usuario = @ID_Usuario", parametros);
 
             if (result <= 0)
                 return BadRequest("Su información no se actualizó correctamente");
@@ -42,12 +45,24 @@ namespace TurismoRural_API.Controllers
         public IActionResult ConsultarUsuario()
         {
             var consecutivo = User.FindFirst("consecutivo")?.Value;
+            if (!int.TryParse(consecutivo, out var idUsuario))
+                return Unauthorized("Token inválido");
 
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
-            parametros.Add("@Consecutivo", consecutivo);
+            parametros.Add("@ID_Usuario", idUsuario);
 
-            var result = context.QueryFirstOrDefault<UsuarioResponse>("sp_ConsultarUsuario", parametros);
+            var result = context.QueryFirstOrDefault<UsuarioResponse>(@"
+                SELECT
+                    ID_Usuario AS Consecutivo,
+                    '' AS Identificacion,
+                    Nombre,
+                    Correo AS CorreoElectronico,
+                    Contrasena AS Contrasenna,
+                    '' AS Token,
+                    '' AS ImagenPerfil
+                FROM Usuario
+                WHERE ID_Usuario = @ID_Usuario", parametros);
 
             if (result == null)
                 return NotFound("Su información no se validó correctamente");
@@ -59,16 +74,17 @@ namespace TurismoRural_API.Controllers
         public IActionResult CambiarPerfil(PerfilRequest model)
         {
             var consecutivo = User.FindFirst("consecutivo")?.Value;
+            if (!int.TryParse(consecutivo, out var idUsuario))
+                return Unauthorized("Token inválido");
 
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
-            parametros.Add("@Consecutivo", consecutivo);
-            parametros.Add("@Identificacion", model.Identificacion);
+            parametros.Add("@ID_Usuario", idUsuario);
             parametros.Add("@Nombre", model.Nombre);
             parametros.Add("@CorreoElectronico", model.CorreoElectronico);
-            parametros.Add("@ImagenPerfil", model.ImagenPerfil);
 
-            var result = context.Execute("sp_ActualizarPerfil", parametros);
+            var result = context.Execute(
+                "UPDATE Usuario SET Nombre = @Nombre, Correo = @CorreoElectronico WHERE ID_Usuario = @ID_Usuario", parametros);
 
             if (result <= 0)
                 return BadRequest("Su información no se actualizó correctamente");

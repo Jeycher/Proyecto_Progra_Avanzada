@@ -25,14 +25,13 @@ namespace TurismoRural_API.Controllers
 
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
-            parametros.Add("@Error", exception?.Error.Message);
-            parametros.Add("@Fecha", DateTime.Now);
-            parametros.Add("@Origen", exception?.Path);
-            parametros.Add("@Usuario", usuario);
+            parametros.Add("@MensajeError", exception?.Error.Message);
+            parametros.Add("@StackTrace", exception?.Error.StackTrace);
+            parametros.Add("@Metodo", exception?.Path);
 
             try
             {
-                context.Execute("sp_RegistrarError", parametros);
+                context.Execute("SP_RegistrarError", parametros, commandType: System.Data.CommandType.StoredProcedure);
             }
             catch
             {
