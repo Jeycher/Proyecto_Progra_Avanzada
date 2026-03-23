@@ -30,7 +30,7 @@ namespace TurismoRural_API.Controllers
             catch (Exception ex)
             {
                 await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".GetAll", ex.Message, ex.StackTrace);
-                return StatusCode(500, "An error occurred while processing the request.");
+                return StatusCode(500, "An error occurred while processing the request. while requesting le list of reservations");
             }
         }
 

@@ -24,6 +24,7 @@ namespace TurismoRural_API.Repositories
             parameters.Add("@Contrasena", user.PasswordHash ?? string.Empty);
             parameters.Add("@ID_Rol", string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
 
+
             await connection.ExecuteAsync("SP_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
             var id = await connection.QuerySingleAsync<int>(
                 @"SELECT TOP 1 ID_Usuario
@@ -36,6 +37,7 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
+
             return await connection.QueryAsync<User>(
                 @"SELECT
                     ID_Usuario AS Id,
@@ -45,6 +47,7 @@ namespace TurismoRural_API.Repositories
                     CASE WHEN ID_Rol = 1 THEN 'Administrador' ELSE 'User' END AS Role,
                     Fecha_Registro AS CreatedAt
                   FROM Usuario");
+
         }
 
         public async Task<User?> GetByEmailAsync(string email)
