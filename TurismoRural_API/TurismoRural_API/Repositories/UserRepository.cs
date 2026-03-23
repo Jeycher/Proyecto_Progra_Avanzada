@@ -19,11 +19,11 @@ namespace TurismoRural_API.Repositories
             // Uses stored procedure 'sp_RegistrarUsuario' which should return the new Id as an integer
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@FullName", user.FullName);
-            parameters.Add("@Email", user.Email);
-            parameters.Add("@PasswordHash", user.PasswordHash);
-            parameters.Add("@Role", user.Role);
-            parameters.Add("@CreatedAt", user.CreatedAt);
+            parameters.Add("@FullName", user.Nombre);
+            parameters.Add("@Email", user.Correo);
+            parameters.Add("@PasswordHash", user.Contrasena);
+            parameters.Add("@Role", user.ID_Rol);
+            parameters.Add("@CreatedAt", user.Fecha_Registro);
 
             var id = await connection.QuerySingleAsync<int>("sp_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
             return id;
@@ -32,7 +32,7 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
-            return await connection.QueryAsync<User>("sp_ObtenerUsuarios", commandType: System.Data.CommandType.StoredProcedure);
+            return await connection.QueryAsync<User>("SP_ConsultarUsuarios", commandType: System.Data.CommandType.StoredProcedure);
         }
 
         public async Task<User?> GetByEmailAsync(string email)

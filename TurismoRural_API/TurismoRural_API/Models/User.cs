@@ -1,12 +1,14 @@
 namespace TurismoRural_API.Models
 {
+    
     public class User
     {
-        public int Id { get; set; }
-        public string? FullName { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public string? PasswordHash { get; set; }
-        public string Role { get; set; } = "User";
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int ID_Usuario { get; set; }
+        public string? Nombre { get; set; }
+        public string Correo { get; set; } = string.Empty;
+        public string? Contrasena { get; set; }
+        public int Telefono { get; set; }
+        public string ID_Rol { get; set; } = "User";
+        public DateTime Fecha_Registro { get; set; } = DateTime.UtcNow;
     }
 }

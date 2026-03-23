@@ -57,11 +57,11 @@ namespace TurismoRural_API.Controllers
             try
             {
                 // In a real app, hash the password and validate fields
-                var existing = await _userRepository.GetByEmailAsync(user.Email);
+                var existing = await _userRepository.GetByEmailAsync(user.Correo);
                 if (existing != null) return Conflict("Email already registered.");
 
                 var id = await _userRepository.CreateAsync(user);
-                user.Id = id;
+                user.ID_Usuario = id;
                 return CreatedAtAction(nameof(GetById), new { id = id }, user);
             }
             catch (Exception ex)
