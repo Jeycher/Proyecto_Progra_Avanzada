@@ -8,7 +8,7 @@ namespace TurismoRural_API.Interfaces
         Task<IEnumerable<Reservation>> GetAllAsync();
         Task<Reservation?> GetByIdAsync(int id);
         Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId);
-        Task<bool> UpdateAsync(Reservation reservation);
+        Task<bool> UpdateAsync(int id, UpdateReservationDto model);
         Task<bool> DeleteAsync(int id);
     }
 }

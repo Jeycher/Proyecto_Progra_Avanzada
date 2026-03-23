@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using System.Data;
 using TurismoRural_API.Interfaces;
 using TurismoRural_API.Models;
@@ -83,24 +83,24 @@ namespace TurismoRural_API.Repositories
                   WHERE ID_Usuario = @ID_Usuario;", parameters);
         }
 
-        public async Task<bool> UpdateAsync(Reservation reservation)
+        public async Task<bool> UpdateAsync(int id, UpdateReservationDto model)
         {
             using var connection = _context.CreateConnection();
-            var parameters = new DynamicParameters();
-            parameters.Add("@ID_Reserva", reservation.Id);
-            parameters.Add("@Fecha_Reserva", reservation.DateFrom.Date);
-            parameters.Add("@Estado", !string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase));
-            parameters.Add("@ID_Usuario", reservation.UserId);
-            parameters.Add("@ID_Fecha", reservation.ExperienceId);
 
-            var affected = await connection.ExecuteAsync(
-                @"UPDATE Reserva
-                  SET Fecha_Reserva = @Fecha_Reserva,
-                      Estado = @Estado,
-                      ID_Usuario = @ID_Usuario,
-                      ID_Fecha = @ID_Fecha
-                  WHERE ID_Reserva = @ID_Reserva;", parameters);
-            return affected > 0;
+            var result = await connection.ExecuteAsync(
+                "sp_ActualizarReserva",
+                new
+                {
+                    ID_Reserva = id,
+                    ID_Usuario = model.UserId,
+                    ID_Fecha = model.FechaId,
+                    Cantidad_Personas = model.CantidadPersonas,
+                    Estado = model.Estado
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result > 0;
         }
     }
 }
