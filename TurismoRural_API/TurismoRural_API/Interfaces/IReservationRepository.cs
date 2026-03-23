@@ -4,7 +4,7 @@ namespace TurismoRural_API.Interfaces
 {
     public interface IReservationRepository
     {
-        Task<int> CreateAsync(Reservation reservation);
+        Task<int> CreateAsync(CreateReservationDto dto);
         Task<IEnumerable<Reservation>> GetAllAsync();
         Task<Reservation?> GetByIdAsync(int id);
         Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId);
