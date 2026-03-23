@@ -16,39 +16,69 @@ namespace TurismoRural_API.Repositories
 
         public async Task<int> CreateAsync(User user)
         {
-            // Uses stored procedure 'sp_RegistrarUsuario' which should return the new Id as an integer
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@FullName", user.FullName);
-            parameters.Add("@Email", user.Email);
-            parameters.Add("@PasswordHash", user.PasswordHash);
-            parameters.Add("@Role", user.Role);
-            parameters.Add("@CreatedAt", user.CreatedAt);
+            parameters.Add("@Nombre", user.FullName);
+            parameters.Add("@Correo", user.Email);
+            parameters.Add("@Telefono", (string?)null);
+            parameters.Add("@Contrasena", user.PasswordHash ?? string.Empty);
+            parameters.Add("@ID_Rol", string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
 
-            var id = await connection.QuerySingleAsync<int>("sp_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
+            await connection.ExecuteAsync("SP_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
+            var id = await connection.QuerySingleAsync<int>(
+                @"SELECT TOP 1 ID_Usuario
+                  FROM Usuario
+                  WHERE Correo = @Correo
+                  ORDER BY ID_Usuario DESC;", parameters);
             return id;
         }
 
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
-            return await connection.QueryAsync<User>("sp_ObtenerUsuarios", commandType: System.Data.CommandType.StoredProcedure);
+            return await connection.QueryAsync<User>(
+                @"SELECT
+                    ID_Usuario AS Id,
+                    Nombre AS FullName,
+                    Correo AS Email,
+                    Contrasena AS PasswordHash,
+                    CASE WHEN ID_Rol = 1 THEN 'Administrador' ELSE 'User' END AS Role,
+                    Fecha_Registro AS CreatedAt
+                  FROM Usuario");
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@Email", email);
-            return await connection.QueryFirstOrDefaultAsync<User>("sp_ObtenerUsuarioPorEmail", parameters, commandType: System.Data.CommandType.StoredProcedure);
+            parameters.Add("@Correo", email);
+            return await connection.QueryFirstOrDefaultAsync<User>(
+                @"SELECT
+                    ID_Usuario AS Id,
+                    Nombre AS FullName,
+                    Correo AS Email,
+                    Contrasena AS PasswordHash,
+                    CASE WHEN ID_Rol = 1 THEN 'Administrador' ELSE 'User' END AS Role,
+                    Fecha_Registro AS CreatedAt
+                  FROM Usuario
+                  WHERE Correo = @Correo", parameters);
         }
 
         public async Task<User?> GetByIdAsync(int id)
         {
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@Id", id);
-            return await connection.QueryFirstOrDefaultAsync<User>("sp_ObtenerUsuarioPorId", parameters, commandType: System.Data.CommandType.StoredProcedure);
+            parameters.Add("@ID_Usuario", id);
+            return await connection.QueryFirstOrDefaultAsync<User>(
+                @"SELECT
+                    ID_Usuario AS Id,
+                    Nombre AS FullName,
+                    Correo AS Email,
+                    Contrasena AS PasswordHash,
+                    CASE WHEN ID_Rol = 1 THEN 'Administrador' ELSE 'User' END AS Role,
+                    Fecha_Registro AS CreatedAt
+                  FROM Usuario
+                  WHERE ID_Usuario = @ID_Usuario", parameters);
         }
     }
 }

@@ -8,12 +8,12 @@ namespace TurismoRural_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ReservationsController : ControllerBase
+    public class ExperienciasController : ControllerBase
     {
-        private readonly IReservationRepository _repo;
+        private readonly IExperienciaRepository _repo;
         private readonly DapperContext _context;
 
-        public ReservationsController(IReservationRepository repo, DapperContext context)
+        public ExperienciasController(IExperienciaRepository repo, DapperContext context)
         {
             _repo = repo;
             _context = context;
@@ -29,7 +29,7 @@ namespace TurismoRural_API.Controllers
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".GetAll", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(ExperienciasController) + ".GetAll", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
@@ -45,56 +45,45 @@ namespace TurismoRural_API.Controllers
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".Get", ex.Message, ex.StackTrace);
-                return StatusCode(500, "An error occurred while processing the request.");
-            }
-        }
-
-        [HttpGet("by-user/{userId:int}")]
-        public async Task<IActionResult> GetByUser(int userId)
-        {
-            try
-            {
-                var items = await _repo.GetByUserIdAsync(userId);
-                return Ok(items);
-            }
-            catch (Exception ex)
-            {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".GetByUser", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(ExperienciasController) + ".Get", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Reservation model)
+        public async Task<IActionResult> Create([FromBody] ExperienciaCreateRequest model)
         {
             if (model == null) return BadRequest();
+
             try
             {
                 var id = await _repo.CreateAsync(model);
-                model.Id = id;
-                return CreatedAtAction(nameof(Get), new { id = id }, model);
+                var creada = await _repo.GetByIdAsync(id);
+                return Ok(creada);
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".Create", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(ExperienciasController) + ".Create", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Reservation model)
+        public async Task<IActionResult> Update(int id, [FromBody] ExperienciaUpdateRequest model)
         {
-            if (model == null || id != model.Id) return BadRequest();
+            if (model == null) return BadRequest();
+
             try
             {
-                var ok = await _repo.UpdateAsync(model);
+                var ok = await _repo.UpdateAsync(id, model);
                 if (!ok) return NotFound();
-                return Ok(model);
+
+                var actualizada = await _repo.GetByIdAsync(id);
+                return Ok(actualizada);
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".Update", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(ExperienciasController) + ".Update", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
@@ -110,7 +99,7 @@ namespace TurismoRural_API.Controllers
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".Delete", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(ExperienciasController) + ".Delete", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }

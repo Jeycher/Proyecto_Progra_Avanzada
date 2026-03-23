@@ -11,8 +11,10 @@ namespace TurismoRural_API.Utilities
             try
             {
                 using var connection = context.CreateConnection();
-                var sql = "INSERT INTO ErrorLogs (Source, Message, StackTrace, CreatedAt) VALUES (@Source, @Message, @StackTrace, @CreatedAt)";
-                await connection.ExecuteAsync(sql, new { Source = source, Message = message, StackTrace = stackTrace, CreatedAt = DateTime.UtcNow });
+                await connection.ExecuteAsync(
+                    "SP_RegistrarError",
+                    new { MensajeError = message, StackTrace = stackTrace, Metodo = source },
+                    commandType: CommandType.StoredProcedure);
             }
             catch
             {
