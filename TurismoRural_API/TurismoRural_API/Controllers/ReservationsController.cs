@@ -66,13 +66,12 @@ namespace TurismoRural_API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Reservation model)
+        public async Task<IActionResult> Create([FromBody] CreateReservationDto model)
         {
             if (model == null) return BadRequest();
             try
             {
-                var id = await _repo.CreateAsync(model);
-                model.Id = id;
+                var id = await _repo.CreateAsync(model);// El ID generado por la base de datos
                 return CreatedAtAction(nameof(Get), new { id = id }, model);
             }
             catch (Exception ex)

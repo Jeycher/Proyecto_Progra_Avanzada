@@ -1,4 +1,5 @@
 using Dapper;
+using System.Data;
 using TurismoRural_API.Interfaces;
 using TurismoRural_API.Models;
 
@@ -13,23 +14,22 @@ namespace TurismoRural_API.Repositories
             _context = context;
         }
 
-        public async Task<int> CreateAsync(Reservation reservation)
+        public async Task<int> CreateAsync(CreateReservationDto dto)
         {
             using var connection = _context.CreateConnection();
-            var parameters = new DynamicParameters();
-            parameters.Add("@Fecha_Reserva", reservation.DateFrom.Date);
-            parameters.Add("@Cantidad_Personas", 1);
-            parameters.Add("@Estado", !string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase));
-            parameters.Add("@ID_Usuario", reservation.UserId);
-            parameters.Add("@ID_Fecha", reservation.ExperienceId);
 
-            await connection.ExecuteAsync("SP_CrearReserva", parameters, commandType: System.Data.CommandType.StoredProcedure);
-            var id = await connection.QuerySingleAsync<int>(
-                @"SELECT TOP 1 ID_Reserva
-                  FROM Reserva
-                  WHERE ID_Usuario = @ID_Usuario AND ID_Fecha = @ID_Fecha
-                  ORDER BY ID_Reserva DESC;", parameters);
-            return id;
+            var result = await connection.ExecuteScalarAsync<int>(
+                "sp_CrearReserva",
+                new
+                {
+                    ID_Usuario = dto.UserId,
+                    ID_Fecha = dto.FechaId,
+                    Cantidad_Personas = dto.CantidadPersonas
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -44,34 +44,25 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<Reservation>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
+
             return await connection.QueryAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva;");
+                "sp_ObtenerReservas",
+                commandType: CommandType.StoredProcedure
+            );
         }
 
         public async Task<Reservation?> GetByIdAsync(int id)
         {
             using var connection = _context.CreateConnection();
+
             var parameters = new DynamicParameters();
             parameters.Add("@ID_Reserva", id);
+
             return await connection.QueryFirstOrDefaultAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva
-                  WHERE ID_Reserva = @ID_Reserva;", parameters);
+                "sp_ObtenerReservaPorID",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
         }
 
         public async Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId)

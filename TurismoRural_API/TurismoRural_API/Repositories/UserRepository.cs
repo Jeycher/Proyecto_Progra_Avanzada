@@ -18,11 +18,11 @@ namespace TurismoRural_API.Repositories
         {
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@Nombre", user.FullName);
-            parameters.Add("@Correo", user.Email);
+            parameters.Add("@Nombre", user.Nombre);
+            parameters.Add("@Correo", user.Correo);
             parameters.Add("@Telefono", (string?)null);
-            parameters.Add("@Contrasena", user.PasswordHash ?? string.Empty);
-            parameters.Add("@ID_Rol", string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
+            parameters.Add("@Contrasena", user.Contrasena ?? string.Empty);
+            parameters.Add("@ID_Rol", string.Equals(user.ID_Rol, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
 
 
             await connection.ExecuteAsync("SP_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
