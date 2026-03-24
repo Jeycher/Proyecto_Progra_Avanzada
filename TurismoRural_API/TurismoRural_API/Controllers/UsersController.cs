@@ -54,19 +54,83 @@ namespace TurismoRural_API.Controllers
         public async Task<IActionResult> Register([FromBody] User user)
         {
             if (user == null) return BadRequest();
+
             try
             {
-                // In a real app, hash the password and validate fields
                 var existing = await _userRepository.GetByEmailAsync(user.Correo);
                 if (existing != null) return Conflict("Email already registered.");
 
                 var id = await _userRepository.CreateAsync(user);
                 user.ID_Usuario = id;
+
                 return CreatedAtAction(nameof(GetById), new { id = id }, user);
             }
             catch (Exception ex)
             {
                 await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Register", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Correo) || string.IsNullOrWhiteSpace(request.Contrasena))
+                return BadRequest("Correo y contraseña son requeridos.");
+
+            try
+            {
+                var user = await _userRepository.LoginAsync(request.Correo, request.Contrasena);
+
+                if (user == null)
+                    return Unauthorized("Correo o contraseña incorrectos.");
+
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Login", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] User user)
+        {
+            if (user == null || id != user.ID_Usuario)
+                return BadRequest();
+
+            try
+            {
+                var updated = await _userRepository.UpdateAsync(user);
+
+                if (!updated)
+                    return NotFound();
+
+                return Ok("Usuario actualizado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Update", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deleted = await _userRepository.DeleteAsync(id);
+
+                if (!deleted)
+                    return NotFound();
+
+                return Ok("Usuario eliminado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Delete", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
         }
