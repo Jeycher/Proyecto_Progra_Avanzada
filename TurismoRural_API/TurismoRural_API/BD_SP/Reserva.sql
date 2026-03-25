@@ -5,41 +5,33 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        -- IDs
         r.ID_Reserva AS iD_Reserva,
         r.ID_Usuario AS ID_Usuario,
-        r.ID_Fecha AS ID_Fecha,
+        r.ID_Concurrencia AS ID_Fecha,
         ec.ID_Experiencia AS ID_Experiencia,
-
-        -- Datos enriquecidos
+		R.Cantidad_Personas AS Cantidad_Personas,
+		CAST(r.Fecha_Reserva AS datetime2) AS Fecha_Reserva,
         u.Nombre AS NombreUsuario,
-        e.Titulo AS TituloExperiencia,
+        e.Titulo AS nombreConcurrencia,
+		r.Estado AS Estado,
+		ec.ID_Concurrencia as iD_Concurrencia,
+				Ct.Descripcion as EstadoNombre
 
-        -- Fechas
-        CAST(r.Fecha_Reserva AS datetime2) AS Fecha_Reserva,
-        CAST(ec.Fecha AS datetime2) AS Fecha_Experiencia,
-
-        -- Estado
-        r.Estado AS Estado,
-
-        -- Extras útiles
-        ec.Precio,
-        ec.Cupos_Disponibles
 
     FROM Reserva r
 
     INNER JOIN Usuario u 
         ON r.ID_Usuario = u.ID_Usuario
-
     INNER JOIN ExperienciaConcurrencia ec 
-        ON r.ID_Fecha = ec.ID_Concurrencia
-
+        ON r.iD_Concurrencia = ec.ID_Concurrencia
     INNER JOIN Experiencia e 
         ON ec.ID_Experiencia = e.ID_Experiencia
+	INNER JOIN CatalogoEstado Ct 
+		on Ct.ID_estado = r.Estado
 
     WHERE r.ID_Reserva = @ID_Reserva;
 END;
-Go
+GO
 CREATE OR ALTER PROCEDURE SP_ConsultarReservas
 AS
 BEGIN
@@ -48,47 +40,24 @@ BEGIN
     SELECT
         R.ID_Reserva AS iD_Reserva,
         U.Nombre AS NombreUsuario,
-        E.Titulo AS TituloExperiencia,
+        E.Titulo AS nombreConcurrencia,
         CAST(FD.Fecha AS datetime2) AS Fecha_Reserva,
         R.Cantidad_Personas AS Cantidad_Personas,
         R.ID_Usuario AS ID_Usuario,
-        R.ID_Fecha AS ID_Fecha,
-		R.Estado AS Estado
+        R.ID_Concurrencia AS iD_Concurrencia,
+        R.Estado AS Estado,
+		Ct.Descripcion as EstadoNombre
+
 
     FROM Reserva R
     INNER JOIN Usuario U
         ON R.ID_Usuario = U.ID_Usuario
     INNER JOIN ExperienciaConcurrencia FD
-        ON R.ID_Fecha = FD.ID_Concurrencia
+        ON R.ID_Concurrencia = FD.ID_Concurrencia
     INNER JOIN Experiencia E
-        ON FD.ID_Experiencia = E.ID_Experiencia;
-END;
-GO
-CREATE OR ALTER PROCEDURE sp_CrearReserva
-    @ID_Usuario INT,
-    @ID_Fecha INT,
-    @Cantidad_Personas INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    INSERT INTO Reserva (
-        Fecha_Reserva,
-        Cantidad_Personas,
-        Estado,
-        ID_Usuario,
-        ID_Fecha
-    )
-    VALUES (
-        GETDATE(),         -- fecha automática
-        @Cantidad_Personas,
-        1,                 -- 1 = Confirmed
-        @ID_Usuario,
-        @ID_Fecha
-    );
-
-    -- opcional: devolver el ID creado
-    SELECT SCOPE_IDENTITY() AS IdGenerado;
+        ON FD.ID_Experiencia = E.ID_Experiencia
+	INNER JOIN CatalogoEstado Ct 
+		on Ct.ID_estado = r.Estado
 END;
 GO
 CREATE OR ALTER PROCEDURE SP_ObtenerReservasPorUsuario
@@ -98,17 +67,105 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        ID_Reserva AS iD_Reserva,
-        ID_Fecha AS ID_Fecha,
-        ID_Usuario AS ID_Usuario,
-		Cantidad_Personas,
-        CAST(Fecha_Reserva AS datetime2) AS fecha_Reserva,
-        CASE 
-            WHEN Estado = 1 THEN 'Confirmed' 
-            ELSE 'Pending' 
-        END AS Status,
-        GETUTCDATE() AS CreatedAt
-    FROM Reserva
-    WHERE ID_Usuario = @ID_Usuario;
+        R.ID_Reserva AS iD_Reserva,
+        R.ID_Concurrencia AS ID_Fecha,
+        R.ID_Usuario AS ID_Usuario,
+        R.Cantidad_Personas,
+        CAST(R.Fecha_Reserva AS datetime2) AS fecha_Reserva,
+		e.Titulo AS nombreConcurrencia,
+        R.Estado,
+		R.ID_Concurrencia AS iD_Concurrencia,
+
+        Ct.Descripcion AS EstadoNombre
+    FROM Reserva R
+
+    INNER JOIN CatalogoEstado Ct
+        ON Ct.ID_estado = R.Estado
+		INNER JOIN ExperienciaConcurrencia FD
+        ON R.ID_Concurrencia = FD.ID_Concurrencia
+		 INNER JOIN Experiencia E
+        ON FD.ID_Experiencia = E.ID_Experiencia
+    WHERE R.ID_Usuario = @ID_Usuario;
+
 END;
 GO
+CREATE OR ALTER PROCEDURE sp_CrearReserva
+    @ID_Usuario INT,
+    @ID_Concurrencia INT,
+    @Cantidad_Personas INT,
+    @Estado INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Reserva (
+        Fecha_Reserva,
+        Cantidad_Personas,
+        Estado,
+        ID_Usuario,
+        ID_Concurrencia
+    )
+    VALUES (
+        GETDATE(),              -- fecha actual
+        @Cantidad_Personas,
+        @ID_Usuario,
+        @Estado,
+		@ID_Concurrencia
+
+    );
+
+    -- 👇 opcional pero PRO: devolver el ID creado
+    SELECT SCOPE_IDENTITY() AS ID_Reserva;
+
+END;
+GO
+CREATE OR ALTER PROCEDURE sp_ActualizarReserva
+    @ID_Reserva INT,
+    @ID_Usuario INT,
+    @ID_Concurrencia INT,
+    @Cantidad_Personas INT,
+    @Estado INT
+AS
+BEGIN
+    SET NOCOUNT OFF; -- IMPORTANTE para ExecuteAsync
+
+    UPDATE Reserva
+    SET 
+        ID_Usuario = @ID_Usuario,
+        ID_Concurrencia = @ID_Concurrencia,
+        Cantidad_Personas = @Cantidad_Personas,
+        Estado = @Estado
+    WHERE ID_Reserva = @ID_Reserva;
+END
+GO
+CREATE OR ALTER PROCEDURE sp_EliminarReserva
+    @ID_Reserva INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Reserva WHERE ID_Reserva = @ID_Reserva)
+    BEGIN
+        SELECT 0 AS Resultado;
+        RETURN;
+    END
+
+    DELETE FROM Reserva
+    WHERE ID_Reserva = @ID_Reserva;
+
+    SELECT 1 AS Resultado;
+END;
+go
+
+
+CREATE TABLE Reserva ( 
+GO
+create table CatalogoEstado(
+    ID_estado INT PRIMARY KEY,
+    Descripcion VARCHAR(50)
+);          
+go
+
+
+
+

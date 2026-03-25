@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using System.Data;
 using TurismoRural_API.Interfaces;
-using TurismoRural_API.Models;
 using TurismoRural_API.Models.Reservas;
 
 namespace TurismoRural_API.Repositories
@@ -23,11 +22,12 @@ namespace TurismoRural_API.Repositories
                 "sp_CrearReserva",
                 new
                 {
-                    Estado = 1,
-                    ID_Usuario = dto.UserId,
-                    ID_Fecha = dto.FechaId,
-                    Cantidad_Personas = dto.CantidadPersonas,
-                    Fecha_Reserva = DateTime.Now.ToString("yyyy-MM-dd")
+                    dto.Estado,
+                    dto.ID_Usuario,
+                    dto.Cantidad_Personas,
+                    dto.ID_Concurrencia
+
+
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -84,22 +84,33 @@ namespace TurismoRural_API.Repositories
 
         public async Task<bool> UpdateAsync(int id, UpdateReservationDto model)
         {
+            if (id <= 0 || model == null)
+                return false;
+
             using var connection = _context.CreateConnection();
 
-            var result = await connection.ExecuteAsync(
-                "sp_ActualizarReserva",
-                new
-                {
-                    ID_Reserva = id,
-                    ID_Usuario = model.ID_Usuario,
-                    ID_Fecha = model.ID_Fecha,
-                    Cantidad_Personas = model.Cantidad_Personas,
-                    Estado = model.Estado
-                },
-                commandType: CommandType.StoredProcedure
-            );
+            try
+            {
+                var result = await connection.ExecuteAsync(
+                    "sp_ActualizarReserva",
+                    new
+                    {
+                        ID_Reserva = id,
+                        ID_Usuario = model.ID_Usuario,
+                        ID_Concurrencia = model.iD_Concurrencia,
+                        Cantidad_Personas = model.Cantidad_Personas,
+                        Estado = model.Estado
+                    },
+                    commandType: CommandType.StoredProcedure
+                );
 
-            return result > 0;
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                // log aquí
+                return false;
+            }
         }
     }
 }
