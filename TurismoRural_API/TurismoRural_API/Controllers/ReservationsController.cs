@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using TurismoRural_API.Interfaces;
 using TurismoRural_API.Models;
+using TurismoRural_API.Models.Reservas;
 using TurismoRural_API.Repositories;
 using TurismoRural_API.Utilities;
 
@@ -82,14 +83,19 @@ namespace TurismoRural_API.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Reservation model)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto model)
         {
-            if (model == null || id != model.Id) return BadRequest();
+            if (model == null)
+                return BadRequest();
+
             try
             {
-                var ok = await _repo.UpdateAsync(model);
-                if (!ok) return NotFound();
-                return Ok(model);
+                var ok = await _repo.UpdateAsync(id, model);
+
+                if (!ok)
+                    return NotFound();
+
+                return Ok();
             }
             catch (Exception ex)
             {

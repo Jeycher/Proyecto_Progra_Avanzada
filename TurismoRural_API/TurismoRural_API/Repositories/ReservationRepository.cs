@@ -1,7 +1,8 @@
-using Dapper;
+﻿using Dapper;
 using System.Data;
 using TurismoRural_API.Interfaces;
 using TurismoRural_API.Models;
+using TurismoRural_API.Models.Reservas;
 
 namespace TurismoRural_API.Repositories
 {
@@ -22,9 +23,11 @@ namespace TurismoRural_API.Repositories
                 "sp_CrearReserva",
                 new
                 {
+                    Estado = 1,
                     ID_Usuario = dto.UserId,
                     ID_Fecha = dto.FechaId,
-                    Cantidad_Personas = dto.CantidadPersonas
+                    Cantidad_Personas = dto.CantidadPersonas,
+                    Fecha_Reserva = DateTime.Now.ToString("yyyy-MM-dd")
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -46,7 +49,7 @@ namespace TurismoRural_API.Repositories
             using var connection = _context.CreateConnection();
 
             return await connection.QueryAsync<Reservation>(
-                "sp_ObtenerReservas",
+                "SP_ConsultarReservas",
                 commandType: CommandType.StoredProcedure
             );
         }
@@ -68,39 +71,35 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId)
         {
             using var connection = _context.CreateConnection();
+
             var parameters = new DynamicParameters();
             parameters.Add("@ID_Usuario", userId);
+
             return await connection.QueryAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva
-                  WHERE ID_Usuario = @ID_Usuario;", parameters);
+                "SP_ObtenerReservasPorUsuario",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
         }
 
-        public async Task<bool> UpdateAsync(Reservation reservation)
+        public async Task<bool> UpdateAsync(int id, UpdateReservationDto model)
         {
             using var connection = _context.CreateConnection();
-            var parameters = new DynamicParameters();
-            parameters.Add("@ID_Reserva", reservation.Id);
-            parameters.Add("@Fecha_Reserva", reservation.DateFrom.Date);
-            parameters.Add("@Estado", !string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase));
-            parameters.Add("@ID_Usuario", reservation.UserId);
-            parameters.Add("@ID_Fecha", reservation.ExperienceId);
 
-            var affected = await connection.ExecuteAsync(
-                @"UPDATE Reserva
-                  SET Fecha_Reserva = @Fecha_Reserva,
-                      Estado = @Estado,
-                      ID_Usuario = @ID_Usuario,
-                      ID_Fecha = @ID_Fecha
-                  WHERE ID_Reserva = @ID_Reserva;", parameters);
-            return affected > 0;
+            var result = await connection.ExecuteAsync(
+                "sp_ActualizarReserva",
+                new
+                {
+                    ID_Reserva = id,
+                    ID_Usuario = model.ID_Usuario,
+                    ID_Fecha = model.ID_Fecha,
+                    Cantidad_Personas = model.Cantidad_Personas,
+                    Estado = model.Estado
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result > 0;
         }
     }
 }
