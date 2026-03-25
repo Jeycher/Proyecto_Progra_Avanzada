@@ -159,6 +159,16 @@ go
 
 
 CREATE TABLE Reserva ( 
+    ID_Reserva INT PRIMARY KEY IDENTITY(1,1),
+    Fecha_Reserva DATE,
+    Cantidad_Personas INT,
+    Estado INT,
+    ID_Usuario INT,
+    ID_Concurrencia INT,
+    FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario),
+	FOREIGN KEY (ID_Concurrencia) REFERENCES ExperienciaConcurrencia(ID_Concurrencia)
+
+);
 GO
 create table CatalogoEstado(
     ID_estado INT PRIMARY KEY,
