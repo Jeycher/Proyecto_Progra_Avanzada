@@ -158,6 +158,12 @@ END;
 go
 
 
+
+
+
+
+
+
 CREATE TABLE Reserva ( 
     ID_Reserva INT PRIMARY KEY IDENTITY(1,1),
     Fecha_Reserva DATE,
@@ -175,6 +181,36 @@ create table CatalogoEstado(
     Descripcion VARCHAR(50)
 );          
 go
+
+
+--inserts nescesarios para reservas 
+
+INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (1, 'Pendiente');
+INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (2, 'Confirmada');
+INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (3, 'Cancelada');
+INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (4, 'Completada');
+
+INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
+VALUES
+('2026-04-10', 'Tour en canopy por la mañana', 50.00, 10, 1),
+('2026-04-11', 'Tour en canopy por la tarde', 55.00, 8, 1),
+('2026-04-15', 'Caminata guiada al volcán', 40.00, 15, 2),
+('2026-04-20', 'Clase de surf para principiantes', 30.00, 12, 3),
+('2026-04-21', 'Clase de surf intermedio', 35.00, 10, 3);
+
+INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
+VALUES
+('Tour en canopy', 'Recorrido en tirolesa por el bosque', 'Aventura', 1, 1),
+('Caminata volcán Arenal', 'Exploración guiada cerca del volcán', 'Naturaleza', 2, 2),
+('Clase de surf', 'Aprende a surfear en el Caribe', 'Deportes', 1, 3);
+
+INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
+VALUES
+('Monteverde', 'Costa Rica', 'Puntarenas', 'Zona turística famosa por su biodiversidad'),
+('La Fortuna', 'Costa Rica', 'Alajuela', 'Destino popular por el volcán Arenal'),
+('Puerto Viejo', 'Costa Rica', 'Limón', 'Comunidad costera con cultura caribeña');
+
+
 
 
 

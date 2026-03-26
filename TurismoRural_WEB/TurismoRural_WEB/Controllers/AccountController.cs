@@ -34,14 +34,13 @@ namespace TurismoRural_WEB.Controllers
             }
 
             // Save user data to session variables
-            HttpContext.Session.SetInt32("UsuarioId", response.Id);
+            HttpContext.Session.SetInt32("UsuarioId", response.Id); // este es el id del usaurio que esta loguiado 
             HttpContext.Session.SetString("NombreUsuario", response.Nombre);
             HttpContext.Session.SetString("CorreoUsuario", response.Correo);
             HttpContext.Session.SetString("TokenUsuario", response.Token);
 
             return RedirectToAction("Profile");
         }
-
         [HttpGet]
         public IActionResult Register()
         {
