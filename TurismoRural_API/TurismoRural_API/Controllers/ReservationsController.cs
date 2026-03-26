@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TurismoRural_API.Interfaces;
-using TurismoRural_API.Models;
 using TurismoRural_API.Models.Reservas;
 using TurismoRural_API.Repositories;
 using TurismoRural_API.Utilities;
