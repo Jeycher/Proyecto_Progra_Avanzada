@@ -1,5 +1,5 @@
 -- TURISMORURAL DATABASE - SETUP WITH JWT & PASSWORD ENCRYPTION
--- Las contraseÒas se encriptan con AES-256 en la API
+-- Las contrase√±as se encriptan con AES-256 en la API
 -- Los tokens JWT tienen validez de 10 minutos
 
 --CREATE DATABASE TurismoRural;
@@ -86,7 +86,7 @@ CREATE TABLE ErrorSistema (
 GO
 
 ---------------------- Procedimientos almacenados -------------------------------------
--- Las contraseÒas recibidas est·n encriptadas por la API
+-- Las contrase√±as recibidas est√°n encriptadas por la API
 -- Clave AES: G7kP2mX9Qa4ZtL8wR1bY6HcD3sN5uFjV
 
 -- Registrar usuario
@@ -253,9 +253,9 @@ BEGIN
 
     INSERT INTO Reserva (
         Fecha_Reserva,
-        Cantidad_Personas,
+        Cantidad_Personas,  
+		ID_Usuario,
         Estado,
-        ID_Usuario,
         ID_Concurrencia
     )
     VALUES (
@@ -381,9 +381,9 @@ BEGIN
 	WHERE ID_Comunidad = @ID_Comunidad;
 
 	IF @@ROWCOUNT = 0
-		PRINT 'No se encontrÛ ninguna comunidad con el ID proporcionado.';
+		PRINT 'No se encontr√≥ ninguna comunidad con el ID proporcionado.';
 	ELSE
-		PRINT 'Comunidad actualizada con Èxito.';
+		PRINT 'Comunidad actualizada con √©xito.';
 END;
 GO
 
@@ -530,11 +530,11 @@ BEGIN
 /*
 INSERT INTO Usuario (Nombre, Correo, Telefono, Contrasena, ID_Rol)
 VALUES 
-('Carlos MÈndez', 'carlos.mendez@gmail.com', '88881111', 'encrypted_password', 1),
-('Ana RodrÌguez', 'ana.rodriguez@gmail.com', '88882222', 'encrypted_password', 2),
-('Luis Fern·ndez', 'luis.fernandez@gmail.com', '88883333', 'encrypted_password', 2),
-('MarÌa GÛmez', 'maria.gomez@gmail.com', '88884444', 'encrypted_password', 2),
-('JosÈ Vargas', 'jose.vargas@gmail.com', '88885555', 'encrypted_password', 1);
+('Carlos M√©ndez', 'carlos.mendez@gmail.com', '88881111', 'encrypted_password', 1),
+('Ana Rodr√≠guez', 'ana.rodriguez@gmail.com', '88882222', 'encrypted_password', 2),
+('Luis Fern√°ndez', 'luis.fernandez@gmail.com', '88883333', 'encrypted_password', 2),
+('Mar√≠a G√≥mez', 'maria.gomez@gmail.com', '88884444', 'encrypted_password', 2),
+('Jos√© Vargas', 'jose.vargas@gmail.com', '88885555', 'encrypted_password', 1);
 
 INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
 VALUES
@@ -551,23 +551,23 @@ INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (4, 'Completada');
 
 INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
 VALUES
-('2026-04-10', 'Tour en canopy por la maÒana', 50.00, 10, 1),
+('2026-04-10', 'Tour en canopy por la ma√±ana', 50.00, 10, 1),
 ('2026-04-11', 'Tour en canopy por la tarde', 55.00, 8, 1),
-('2026-04-15', 'Caminata guiada al volc·n', 40.00, 15, 2),
+('2026-04-15', 'Caminata guiada al volc√°n', 40.00, 15, 2),
 ('2026-04-20', 'Clase de surf para principiantes', 30.00, 12, 3),
 ('2026-04-21', 'Clase de surf intermedio', 35.00, 10, 3);
 
 INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
 VALUES
 ('Tour en canopy', 'Recorrido en tirolesa por el bosque', 'Aventura', 1, 1),
-('Caminata volc·n Arenal', 'ExploraciÛn guiada cerca del volc·n', 'Naturaleza', 2, 2),
+('Caminata volc√°n Arenal', 'Exploraci√≥n guiada cerca del volc√°n', 'Naturaleza', 2, 2),
 ('Clase de surf', 'Aprende a surfear en el Caribe', 'Deportes', 1, 3);
 
 INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
 VALUES
-('Monteverde', 'Costa Rica', 'Puntarenas', 'Zona turÌstica famosa por su biodiversidad'),
-('La Fortuna', 'Costa Rica', 'Alajuela', 'Destino popular por el volc·n Arenal'),
-('Puerto Viejo', 'Costa Rica', 'LimÛn', 'Comunidad costera con cultura caribeÒa');
+('Monteverde', 'Costa Rica', 'Puntarenas', 'Zona tur√≠stica famosa por su biodiversidad'),
+('La Fortuna', 'Costa Rica', 'Alajuela', 'Destino popular por el volc√°n Arenal'),
+('Puerto Viejo', 'Costa Rica', 'Lim√≥n', 'Comunidad costera con cultura caribe√±a');
 
 
 
