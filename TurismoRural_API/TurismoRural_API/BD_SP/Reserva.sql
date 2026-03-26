@@ -98,6 +98,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validación básica
+    IF @Cantidad_Personas <= 0
+    BEGIN
+        RAISERROR('Cantidad de personas inválida', 16, 1);
+        RETURN;
+    END
+
     INSERT INTO Reserva (
         Fecha_Reserva,
         Cantidad_Personas,
@@ -106,13 +113,17 @@ BEGIN
         ID_Concurrencia
     )
     VALUES (
-        GETDATE(),              -- fecha actual
+        GETDATE(),
         @Cantidad_Personas,
-        @ID_Usuario,
         @Estado,
-		@ID_Concurrencia
-
+        @ID_Usuario,
+        @ID_Concurrencia
     );
+
+    -- Retornar ID creado
+    SELECT SCOPE_IDENTITY() AS ID_Reserva;
+END;
+GO
 
     -- 👇 opcional pero PRO: devolver el ID creado
     SELECT SCOPE_IDENTITY() AS ID_Reserva;

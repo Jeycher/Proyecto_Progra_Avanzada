@@ -1,0 +1,109 @@
+﻿@model TurismoRural_WEB.Models.Reservation.Reservation
+@{
+    ViewData["Title"] = "Buscar Reservas";
+}
+
+<h2>🔍 Buscar Reservas</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            <div class="col-md-6">
+                <label for="reservaId" class="form-label">ID de Reserva</label>
+                <input type="number" id="reservaId" name="reservaId" class="form-control" placeholder="Ingresa el ID" required />
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @ViewBag.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (Model != null)
+{
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5>Detalles de la Reserva #@Model.ID_Reserva</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">ID Reserva</h6>
+                    <p class="fw-bold">@Model.ID_Reserva</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Fecha de Reserva</h6>
+                    <p class="fw-bold">@Model.Fecha_Reserva.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">ID Usuario</h6>
+                    <p class="fw-bold">@Model.ID_Usuario</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Cantidad de Personas</h6>
+                    <p class="fw-bold">@Model.Cantidad_Personas</p>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Experiencia</h6>
+                    <p class="fw-bold">@Model.NombreConcurrencia</p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">ID Concurrencia</h6>
+                    <p class="fw-bold">@Model.ID_Concurrencia</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Estado</h6>
+                    <p>
+                        @switch (Model.Estado)
+                        {
+                            case 1:
+                                <span class="badge bg-warning">Pendiente</span>
+                                break;
+                            case 2:
+                                <span class="badge bg-success">Confirmada</span>
+                                break;
+                            case 3:
+                                <span class="badge bg-danger">Cancelada</span>
+                                break;
+                            case 4:
+                                <span class="badge bg-info">Completada</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">Desconocido</span>
+                                break;
+                        }
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Nombre de Estado</h6>
+                    <p class="fw-bold">@Model.EstadoNombre</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a href="@Url.Action("SearchReservations", "Reservation")" class="btn btn-secondary">
+                Buscar Otra Reserva
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                Volver al Inicio
+            </a>
+        </div>
+    </div>
+}

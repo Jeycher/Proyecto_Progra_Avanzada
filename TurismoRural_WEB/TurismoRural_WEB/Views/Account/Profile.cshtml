@@ -7,6 +7,8 @@
     var nombre = Context.Session.GetString("NombreUsuario");
     var correo = Context.Session.GetString("CorreoUsuario");
     var token = Context.Session.GetString("TokenUsuario");
+    var ID_Rol = Context.Session.GetString("ID_Rol");
+
 }
 
 <div class="container mt-5">
@@ -20,6 +22,8 @@
                     <p><strong>ID:</strong> @usuarioId</p>
                     <p><strong>Nombre:</strong> @nombre</p>
                     <p><strong>Correo:</strong> @correo</p>
+                    <p><strong>Rol:</strong> @ID_Rol</p>
+
                     <div class="mt-4">
                         <a href="@Url.Action("Logout", "Account")" class="btn btn-danger">Cerrar Sesión</a>
                     </div>
