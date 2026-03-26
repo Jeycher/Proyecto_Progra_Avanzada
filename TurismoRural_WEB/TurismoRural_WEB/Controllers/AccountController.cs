@@ -25,17 +25,19 @@ namespace TurismoRural_WEB.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = await _userApiService.LoginUserAsync(model);
+            var response = await _userApiService.LoginUserAsync(model);
 
-            if (user == null)
+            if (response == null)
             {
                 ViewBag.Error = "Correo o contraseña incorrectos.";
                 return View(model);
             }
 
-            HttpContext.Session.SetString("NombreUsuario", user.nombre);
-            HttpContext.Session.SetString("CorreoUsuario", user.correo);
-            HttpContext.Session.SetString("RolUsuario", user.id_Rol.ToString());
+            // Save user data to session variables
+            HttpContext.Session.SetInt32("UsuarioId", response.Id);
+            HttpContext.Session.SetString("NombreUsuario", response.Nombre);
+            HttpContext.Session.SetString("CorreoUsuario", response.Correo);
+            HttpContext.Session.SetString("TokenUsuario", response.Token);
 
             return RedirectToAction("Profile");
         }
@@ -56,7 +58,7 @@ namespace TurismoRural_WEB.Controllers
 
             if (result)
             {
-                TempData["Mensaje"] = "Usuario registrado correctamente.";
+                TempData["Mensaje"] = "Usuario registrado correctamente. Por favor inicie sesión.";
                 return RedirectToAction("Login");
             }
 
