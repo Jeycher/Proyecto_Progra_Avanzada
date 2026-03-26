@@ -8,5 +8,7 @@ namespace TurismoRural_API.Interfaces
         Task<User?> GetByEmailAsync(string email);
         Task<int> CreateAsync(User user);
         Task<IEnumerable<User>> GetAllAsync();
+        Task<bool> UpdateAsync(User user);
+        Task<bool> DeleteAsync(int id);
     }
 }

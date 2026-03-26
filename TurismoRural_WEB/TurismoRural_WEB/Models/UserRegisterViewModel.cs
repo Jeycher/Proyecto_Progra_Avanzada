@@ -5,24 +5,25 @@ namespace TurismoRural_WEB.Models
     public class UserRegisterViewModel
     {
         [Required(ErrorMessage = "El nombre es requerido")]
-        public string nombre { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El correo es requerido")]
         [EmailAddress(ErrorMessage = "Correo inválido")]
-        public string correo { get; set; } = string.Empty;
+        [Display(Name = "Correo Electrónico")]
+        public string CorreoElectronico { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "La contraseña es requerida")]
         [DataType(DataType.Password)]
-        public string contrasena { get; set; } = string.Empty;
+        [Display(Name = "Contraseña")]
+        public string Contrasena { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Debe confirmar la contraseña")]
         [DataType(DataType.Password)]
-        [Compare("contrasena", ErrorMessage = "Las contraseñas no coinciden")]
-        public string confirmarContrasena { get; set; } = string.Empty;
+        [Compare("Contrasena", ErrorMessage = "Las contraseñas no coinciden")]
+        [Display(Name = "Confirmar Contraseña")]
+        public string ConfirmarContrasena { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El teléfono es requerido")]
-        public string telefono { get; set; } = string.Empty;
-
-        public int id_Rol { get; set; } = 2;
+        [Display(Name = "Teléfono")]
+        public string? Telefono { get; set; }
     }
 }

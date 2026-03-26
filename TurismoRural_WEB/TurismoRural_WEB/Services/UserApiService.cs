@@ -17,17 +17,14 @@ namespace TurismoRural_WEB.Services
 
         public async Task<bool> RegisterUserAsync(UserRegisterViewModel model)
         {
-            var apiUrl = _configuration["Valores:UrlAPI"] + "Users/register";
+            var apiUrl = _configuration["Valores:UrlAPI"] + "Users/RegistroUsuario";
 
             var payload = new
             {
-                id_Usuario = 0,
-                nombre = model.nombre,
-                correo = model.correo,
-                contrasena = model.contrasena,
-                telefono = model.telefono,
-                id_Rol = model.id_Rol,
-                fecha_Registro = DateTime.Now
+                nombre = model.Nombre,
+                correoElectronico = model.CorreoElectronico,
+                contrasenna = model.Contrasena,
+                telefono = model.Telefono
             };
 
             var json = JsonSerializer.Serialize(payload);
@@ -38,14 +35,14 @@ namespace TurismoRural_WEB.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<UserViewModel?> LoginUserAsync(LoginViewModel model)
+        public async Task<UsuarioResponse?> LoginUserAsync(LoginViewModel model)
         {
-            var apiUrl = _configuration["Valores:UrlAPI"] + "Users/login";
+            var apiUrl = _configuration["Valores:UrlAPI"] + "Users/IniciarSesion";
 
             var payload = new
             {
-                correo = model.Correo,
-                contrasena = model.Contrasena
+                correoElectronico = model.Correo,
+                contrasenna = model.Contrasena
             };
 
             var json = JsonSerializer.Serialize(payload);
@@ -58,7 +55,7 @@ namespace TurismoRural_WEB.Services
 
             var responseJson = await response.Content.ReadAsStringAsync();
 
-            return JsonSerializer.Deserialize<UserViewModel>(
+            return JsonSerializer.Deserialize<UsuarioResponse>(
                 responseJson,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
             );

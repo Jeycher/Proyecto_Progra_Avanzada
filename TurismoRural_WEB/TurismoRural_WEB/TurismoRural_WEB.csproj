@@ -4,21 +4,30 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="NewFolder1\**" />
     <Compile Remove="NewFolder\**" />
     <Compile Remove="Views\NewFolder\**" />
+    <Compile Remove="TurismoRural_API\**" />
+    <Content Remove="Models\NewFolder\**" />
     <Content Remove="NewFolder1\**" />
     <Content Remove="NewFolder\**" />
     <Content Remove="Views\NewFolder\**" />
+    <Content Remove="TurismoRural_API\**" />
+    <EmbeddedResource Remove="Models\NewFolder\**" />
     <EmbeddedResource Remove="NewFolder1\**" />
     <EmbeddedResource Remove="NewFolder\**" />
     <EmbeddedResource Remove="Views\NewFolder\**" />
+    <EmbeddedResource Remove="TurismoRural_API\**" />
+    <None Remove="Models\NewFolder\**" />
+
     <None Remove="NewFolder1\**" />
     <None Remove="NewFolder\**" />
     <None Remove="Views\NewFolder\**" />
+    <None Remove="TurismoRural_API\**" />
   </ItemGroup>
 
   <ItemGroup>

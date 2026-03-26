@@ -30,7 +30,7 @@ namespace TurismoRural_API.Controllers
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
             parametros.Add("@ID_Usuario", idUsuario);
-            parametros.Add("@Contrasena", model.NuevaContrasenna);
+            parametros.Add("@Contrasena", _password.Encrypt(model.NuevaContrasenna));
 
             var result = context.Execute(
                 "UPDATE Usuario SET Contrasena = @Contrasena WHERE ID_Usuario = @ID_Usuario", parametros);
@@ -55,12 +55,8 @@ namespace TurismoRural_API.Controllers
             var result = context.QueryFirstOrDefault<UsuarioResponse>(@"
                 SELECT
                     ID_Usuario AS Consecutivo,
-                    '' AS Identificacion,
                     Nombre,
-                    Correo AS CorreoElectronico,
-                    Contrasena AS Contrasenna,
-                    '' AS Token,
-                    '' AS ImagenPerfil
+                    Correo AS CorreoElectronico
                 FROM Usuario
                 WHERE ID_Usuario = @ID_Usuario", parametros);
 
@@ -91,6 +87,6 @@ namespace TurismoRural_API.Controllers
 
             return Ok("Su información se actualizó correctamente");
         }
-        
+
     }
 }
