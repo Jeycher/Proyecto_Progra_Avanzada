@@ -1,4 +1,4 @@
-namespace TurismoRural_API.Models
+namespace TurismoRural_WEB.Models
 {
     public class UsuarioResponse
     {

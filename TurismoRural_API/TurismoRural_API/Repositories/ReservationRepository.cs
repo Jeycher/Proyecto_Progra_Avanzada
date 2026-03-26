@@ -1,6 +1,7 @@
-using Dapper;
+﻿using Dapper;
+using System.Data;
 using TurismoRural_API.Interfaces;
-using TurismoRural_API.Models;
+using TurismoRural_API.Models.Reservas;
 
 namespace TurismoRural_API.Repositories
 {
@@ -13,23 +14,25 @@ namespace TurismoRural_API.Repositories
             _context = context;
         }
 
-        public async Task<int> CreateAsync(Reservation reservation)
+        public async Task<int> CreateAsync(CreateReservationDto dto)
         {
             using var connection = _context.CreateConnection();
-            var parameters = new DynamicParameters();
-            parameters.Add("@Fecha_Reserva", reservation.DateFrom.Date);
-            parameters.Add("@Cantidad_Personas", 1);
-            parameters.Add("@Estado", !string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase));
-            parameters.Add("@ID_Usuario", reservation.UserId);
-            parameters.Add("@ID_Fecha", reservation.ExperienceId);
 
-            await connection.ExecuteAsync("SP_CrearReserva", parameters, commandType: System.Data.CommandType.StoredProcedure);
-            var id = await connection.QuerySingleAsync<int>(
-                @"SELECT TOP 1 ID_Reserva
-                  FROM Reserva
-                  WHERE ID_Usuario = @ID_Usuario AND ID_Fecha = @ID_Fecha
-                  ORDER BY ID_Reserva DESC;", parameters);
-            return id;
+            var result = await connection.ExecuteScalarAsync<int>(
+                "sp_CrearReserva",
+                new
+                {
+                    dto.Estado,
+                    dto.ID_Usuario,
+                    dto.Cantidad_Personas,
+                    dto.ID_Concurrencia
+
+
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -44,72 +47,70 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<Reservation>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
+
             return await connection.QueryAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva;");
+                "SP_ConsultarReservas",
+                commandType: CommandType.StoredProcedure
+            );
         }
 
         public async Task<Reservation?> GetByIdAsync(int id)
         {
             using var connection = _context.CreateConnection();
+
             var parameters = new DynamicParameters();
             parameters.Add("@ID_Reserva", id);
+
             return await connection.QueryFirstOrDefaultAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva
-                  WHERE ID_Reserva = @ID_Reserva;", parameters);
+                "sp_ObtenerReservaPorID",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
         }
 
         public async Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId)
         {
             using var connection = _context.CreateConnection();
+
             var parameters = new DynamicParameters();
             parameters.Add("@ID_Usuario", userId);
+
             return await connection.QueryAsync<Reservation>(
-                @"SELECT
-                    ID_Reserva AS Id,
-                    ID_Fecha AS ExperienceId,
-                    ID_Usuario AS UserId,
-                    CAST(Fecha_Reserva AS datetime2) AS DateFrom,
-                    CAST(Fecha_Reserva AS datetime2) AS DateTo,
-                    CASE WHEN Estado = 1 THEN 'Confirmed' ELSE 'Pending' END AS Status,
-                    GETUTCDATE() AS CreatedAt
-                  FROM Reserva
-                  WHERE ID_Usuario = @ID_Usuario;", parameters);
+                "SP_ObtenerReservasPorUsuario",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
         }
 
-        public async Task<bool> UpdateAsync(Reservation reservation)
+        public async Task<bool> UpdateAsync(int id, UpdateReservationDto model)
         {
-            using var connection = _context.CreateConnection();
-            var parameters = new DynamicParameters();
-            parameters.Add("@ID_Reserva", reservation.Id);
-            parameters.Add("@Fecha_Reserva", reservation.DateFrom.Date);
-            parameters.Add("@Estado", !string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase));
-            parameters.Add("@ID_Usuario", reservation.UserId);
-            parameters.Add("@ID_Fecha", reservation.ExperienceId);
+            if (id <= 0 || model == null)
+                return false;
 
-            var affected = await connection.ExecuteAsync(
-                @"UPDATE Reserva
-                  SET Fecha_Reserva = @Fecha_Reserva,
-                      Estado = @Estado,
-                      ID_Usuario = @ID_Usuario,
-                      ID_Fecha = @ID_Fecha
-                  WHERE ID_Reserva = @ID_Reserva;", parameters);
-            return affected > 0;
+            using var connection = _context.CreateConnection();
+
+            try
+            {
+                var result = await connection.ExecuteAsync(
+                    "sp_ActualizarReserva",
+                    new
+                    {
+                        ID_Reserva = id,
+                        ID_Usuario = model.ID_Usuario,
+                        ID_Concurrencia = model.iD_Concurrencia,
+                        Cantidad_Personas = model.Cantidad_Personas,
+                        Estado = model.Estado
+                    },
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                // log aquí
+                return false;
+            }
         }
     }
 }

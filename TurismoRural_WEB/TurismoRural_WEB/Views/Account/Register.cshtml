@@ -1,0 +1,64 @@
+﻿@model TurismoRural_WEB.Models.UserRegisterViewModel
+
+@{
+    ViewData["Title"] = "Registro";
+}
+
+<div class="container auth-wrapper">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-7 col-lg-6">
+            <div class="card auth-card p-4">
+                <h2 class="mb-4 text-center">Registro de Usuario</h2>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger">@ViewBag.Error</div>
+                }
+
+                <form asp-action="Register" method="post">
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CorreoElectronico" class="form-label"></label>
+                        <input asp-for="CorreoElectronico" class="form-control" />
+                        <span asp-validation-for="CorreoElectronico" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Telefono" class="form-label"></label>
+                        <input asp-for="Telefono" class="form-control" />
+                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Contrasena" class="form-label"></label>
+                        <input asp-for="Contrasena" type="password" class="form-control" />
+                        <span asp-validation-for="Contrasena" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ConfirmarContrasena" class="form-label"></label>
+                        <input asp-for="ConfirmarContrasena" type="password" class="form-control" />
+                        <span asp-validation-for="ConfirmarContrasena" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Registrarse</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a asp-controller="Account" asp-action="Login">¿Ya tienes cuenta? Inicia sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -18,11 +18,12 @@ namespace TurismoRural_API.Repositories
         {
             using var connection = _context.CreateConnection();
             var parameters = new DynamicParameters();
-            parameters.Add("@Nombre", user.FullName);
-            parameters.Add("@Correo", user.Email);
+            parameters.Add("@Nombre", user.Nombre);
+            parameters.Add("@Correo", user.Correo);
             parameters.Add("@Telefono", (string?)null);
-            parameters.Add("@Contrasena", user.PasswordHash ?? string.Empty);
-            parameters.Add("@ID_Rol", string.Equals(user.Role, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
+            parameters.Add("@Contrasena", user.Contrasena ?? string.Empty);
+            parameters.Add("@ID_Rol", string.Equals(user.ID_Rol, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
+
 
             await connection.ExecuteAsync("SP_RegistrarUsuario", parameters, commandType: System.Data.CommandType.StoredProcedure);
             var id = await connection.QuerySingleAsync<int>(
@@ -36,6 +37,7 @@ namespace TurismoRural_API.Repositories
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             using var connection = _context.CreateConnection();
+
             return await connection.QueryAsync<User>(
                 @"SELECT
                     ID_Usuario AS Id,
@@ -45,6 +47,7 @@ namespace TurismoRural_API.Repositories
                     CASE WHEN ID_Rol = 1 THEN 'Administrador' ELSE 'User' END AS Role,
                     Fecha_Registro AS CreatedAt
                   FROM Usuario");
+
         }
 
         public async Task<User?> GetByEmailAsync(string email)
@@ -79,6 +82,36 @@ namespace TurismoRural_API.Repositories
                     Fecha_Registro AS CreatedAt
                   FROM Usuario
                   WHERE ID_Usuario = @ID_Usuario", parameters);
+        }
+
+        public async Task<bool> UpdateAsync(User user)
+        {
+            using var connection = _context.CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ID_Usuario", user.ID_Usuario);
+            parameters.Add("@Nombre", user.Nombre);
+            parameters.Add("@Correo", user.Correo);
+            parameters.Add("@Contrasena", user.Contrasena);
+            parameters.Add("@ID_Rol", string.Equals(user.ID_Rol, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
+
+            var result = await connection.ExecuteAsync(
+                @"UPDATE Usuario 
+                  SET Nombre = @Nombre, Correo = @Correo, Contrasena = @Contrasena, ID_Rol = @ID_Rol
+                  WHERE ID_Usuario = @ID_Usuario", parameters);
+
+            return result > 0;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            using var connection = _context.CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ID_Usuario", id);
+
+            var result = await connection.ExecuteAsync(
+                @"DELETE FROM Usuario WHERE ID_Usuario = @ID_Usuario", parameters);
+
+            return result > 0;
         }
     }
 }

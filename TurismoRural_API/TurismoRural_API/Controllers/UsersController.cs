@@ -1,7 +1,15 @@
+using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using TurismoRural_API.Interfaces;
 using TurismoRural_API.Models;
 using TurismoRural_API.Repositories;
+using TurismoRural_API.Services;
 using TurismoRural_API.Utilities;
 
 namespace TurismoRural_API.Controllers
@@ -12,12 +20,114 @@ namespace TurismoRural_API.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly DapperContext _context;
+        private readonly IPasswordHelper _passwordHelper;
+        private readonly IConfiguration _config;
 
-        public UsersController(IUserRepository userRepository, DapperContext context)
+        public UsersController(IUserRepository userRepository, DapperContext context, IPasswordHelper passwordHelper, IConfiguration config)
         {
             _userRepository = userRepository;
             _context = context;
+            _passwordHelper = passwordHelper;
+            _config = config;
         }
+
+        // ============================================================================
+        // AUTHENTICATION ENDPOINTS
+        // ============================================================================
+
+        [AllowAnonymous]
+        [HttpPost("RegistroUsuario")]
+        public IActionResult RegistroUsuario(RegistrarUsuarioRequest model)
+        {
+            using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
+            var parametros = new DynamicParameters();
+            parametros.Add("@Nombre", model.Nombre);
+            parametros.Add("@Correo", model.CorreoElectronico);
+            parametros.Add("@Telefono", model.Telefono ?? string.Empty);
+            parametros.Add("@Contrasena", _passwordHelper.Encrypt(model.Contrasenna));
+            parametros.Add("@ID_Rol", 2); // Default role for new users
+
+            var result = context.Execute("SP_RegistrarUsuario", parametros, commandType: System.Data.CommandType.StoredProcedure);
+
+            if (result <= 0)
+                return BadRequest("Su información no se registró correctamente");
+
+            return Ok("Su información se registró correctamente");
+        }
+
+        [AllowAnonymous]
+        [HttpPost("IniciarSesion")]
+        public IActionResult IniciarSesion(IniciarSesionRequest model)
+        {
+            using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
+
+            var parametros = new DynamicParameters();
+            parametros.Add("@Correo", model.CorreoElectronico);
+
+            var user = context.QueryFirstOrDefault<dynamic>(
+                @"SELECT ID_Usuario, Nombre, Correo, Contrasena
+                  FROM Usuario
+                  WHERE Correo = @Correo",
+                parametros);
+
+            if (user == null)
+                return NotFound("Su información no se autenticó correctamente");
+
+            var encryptedPassword = _passwordHelper.Encrypt(model.Contrasenna);
+            if (encryptedPassword != user.Contrasena)
+                return NotFound("Su información no se autenticó correctamente");
+
+            var response = new UsuarioResponse
+            {
+                Id = user.ID_Usuario,
+                Nombre = user.Nombre,
+                Correo = user.Correo,
+                Token = GenerarToken(user.ID_Usuario)
+            };
+
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpPut("RecuperarAcceso")]
+        public IActionResult RecuperarAcceso(RecuperarAccesoRequest model)
+        {
+            using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
+
+            var parametros = new DynamicParameters();
+            parametros.Add("@Correo", model.CorreoElectronico);
+
+            var user = context.QueryFirstOrDefault<dynamic>(
+                @"SELECT ID_Usuario, Nombre, Correo
+                  FROM Usuario
+                  WHERE Correo = @Correo",
+                parametros);
+
+            if (user == null)
+                return NotFound("Su información no se validó correctamente");
+
+            var nuevaContrasenna = GenerarContrasenna();
+
+            var parametrosActualizacion = new DynamicParameters();
+            parametrosActualizacion.Add("@ID_Usuario", user.ID_Usuario);
+            parametrosActualizacion.Add("@Contrasena", _passwordHelper.Encrypt(nuevaContrasenna));
+
+            var actualizacion = context.Execute(
+                "UPDATE Usuario SET Contrasena = @Contrasena WHERE ID_Usuario = @ID_Usuario",
+                parametrosActualizacion);
+
+            if (actualizacion <= 0)
+                return BadRequest("No se pudo recuperar el acceso");
+
+            var contenido = ObtenerPlantillaCorreo(user.Nombre, nuevaContrasenna);
+            _passwordHelper.EnviarCorreo(user.Correo, "Recuperación de Acceso", contenido);
+
+            return Ok("Se ha enviado una nueva contraseña a su correo electrónico");
+        }
+
+        // ============================================================================
+        // CRUD ENDPOINTS
+        // ============================================================================
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -50,25 +160,94 @@ namespace TurismoRural_API.Controllers
             }
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] User user)
+        [Authorize]
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] User user)
         {
-            if (user == null) return BadRequest();
+            if (user == null || id != user.ID_Usuario)
+                return BadRequest();
+
             try
             {
-                // In a real app, hash the password and validate fields
-                var existing = await _userRepository.GetByEmailAsync(user.Email);
-                if (existing != null) return Conflict("Email already registered.");
+                var updated = await _userRepository.UpdateAsync(user);
 
-                var id = await _userRepository.CreateAsync(user);
-                user.Id = id;
-                return CreatedAtAction(nameof(GetById), new { id = id }, user);
+                if (!updated)
+                    return NotFound();
+
+                return Ok("Usuario actualizado correctamente.");
             }
             catch (Exception ex)
             {
-                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Register", ex.Message, ex.StackTrace);
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Update", ex.Message, ex.StackTrace);
                 return StatusCode(500, "An error occurred while processing the request.");
             }
+        }
+
+        [Authorize]
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deleted = await _userRepository.DeleteAsync(id);
+
+                if (!deleted)
+                    return NotFound();
+
+                return Ok("Usuario eliminado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".Delete", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+        // ============================================================================
+        // PRIVATE HELPER METHODS
+        // ============================================================================
+
+        private static string GenerarContrasenna()
+        {
+            const string letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            return new string([.. Enumerable.Range(0, 8).Select(_ => letras[Random.Shared.Next(letras.Length)])]);
+        }
+
+        private static string ObtenerPlantillaCorreo(string nombre, string contrasenna)
+        {
+            return $@"
+                <html>
+                <body>
+                    <h2>Hola {nombre},</h2>
+                    <p>Se ha solicitado la recuperación de acceso a tu cuenta.</p>
+                    <p>Tu nueva contraseña temporal es: <strong>{contrasenna}</strong></p>
+                    <p>Te recomendamos cambiarla tan pronto ingreses a la plataforma.</p>
+                    <p>Saludos,<br>El equipo de TurismoRural</p>
+                </body>
+                </html>";
+        }
+
+        private string GenerarToken(int consecutivo)
+        {
+            var key = Encoding.UTF8.GetBytes(_config.GetValue<string>("Jwt:Key")!);
+
+            var claims = new[]
+            {
+                new Claim("consecutivo", consecutivo.ToString()),
+            };
+
+            var signingCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256
+            );
+
+            var tokenDescriptor = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(10),
+                signingCredentials: signingCredentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
         }
     }
 }

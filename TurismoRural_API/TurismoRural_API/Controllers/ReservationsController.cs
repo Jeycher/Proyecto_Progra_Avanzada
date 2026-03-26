@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using TurismoRural_API.Interfaces;
-using TurismoRural_API.Models;
+using TurismoRural_API.Models.Reservas;
 using TurismoRural_API.Repositories;
 using TurismoRural_API.Utilities;
 
@@ -30,7 +30,7 @@ namespace TurismoRural_API.Controllers
             catch (Exception ex)
             {
                 await ErrorLogger.LogAsync(_context, nameof(ReservationsController) + ".GetAll", ex.Message, ex.StackTrace);
-                return StatusCode(500, "An error occurred while processing the request.");
+                return StatusCode(500, "An error occurred while processing the request. while requesting le list of reservations");
             }
         }
 
@@ -66,13 +66,12 @@ namespace TurismoRural_API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Reservation model)
+        public async Task<IActionResult> Create([FromBody] CreateReservationDto model)
         {
             if (model == null) return BadRequest();
             try
             {
-                var id = await _repo.CreateAsync(model);
-                model.Id = id;
+                var id = await _repo.CreateAsync(model);// El ID generado por la base de datos
                 return CreatedAtAction(nameof(Get), new { id = id }, model);
             }
             catch (Exception ex)
@@ -83,14 +82,19 @@ namespace TurismoRural_API.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Reservation model)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto model)
         {
-            if (model == null || id != model.Id) return BadRequest();
+            if (model == null)
+                return BadRequest();
+
             try
             {
-                var ok = await _repo.UpdateAsync(model);
-                if (!ok) return NotFound();
-                return Ok(model);
+                var ok = await _repo.UpdateAsync(id, model);
+
+                if (!ok)
+                    return NotFound();
+
+                return Ok();
             }
             catch (Exception ex)
             {

@@ -1,0 +1,84 @@
+﻿@model TurismoRural_WEB.Models.Reservation.ReservationCreateViewModel
+@{
+    ViewData["Title"] = "Agregar Reserva";
+}
+
+<h2>Agregar Reserva</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form method="post">
+    <div class="form-group">
+        <label>Cantidad de Personas</label>
+        <input type="number" name="Cantidad_Personas" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Estado</label>
+        <select name="Estado" class="form-control" required>
+            <option value="">Seleccione</option>
+            <option value="1">Pendiente</option>
+            <option value="2">Confirmada</option>
+            <option value="3">Cancelada</option>
+            <option value="4">Completada</option>
+
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Experiencia</label>
+        <select name="ID_Concurrencia" class="form-control" required>
+            <option value="">Seleccione una experiencia</option>
+            @foreach (var c in Model.Concurrencias)
+            {
+                <option value="@c.ID_Concurrencia">@c.TituloExperiencia - @c.Detalle</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Reservar</button>
+    <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<div class="modal fade" id="confirmacionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">✅ Reserva Creada</h5>
+            </div>
+            <div class="modal-body">
+                <p>Tu reserva ha sido creada exitosamente.</p>
+                <p><strong>ID Concurrencia:</strong> <span id="modalConcurrencia"></span></p>
+                <p><strong>Cantidad de Personas:</strong> <span id="modalCantidad"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+                    Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                // Validación básica
+                const cantidad = document.querySelector('input[name="Cantidad_Personas"]').value;
+                const estado = document.querySelector('select[name="Estado"]').value;
+                const concurrencia = document.querySelector('select[name="ID_Concurrencia"]').value;
+
+                if (!cantidad || cantidad <= 0 || !estado || !concurrencia) {
+                    e.preventDefault();
+                    alert('Por favor completa todos los campos correctamente.");
+                    return false;
+                }
+            });
+        });
+    </script>
+}

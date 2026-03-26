@@ -17,4 +17,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="BD_SP\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="JN_API\**" />
+  </ItemGroup>
+
 </Project>
