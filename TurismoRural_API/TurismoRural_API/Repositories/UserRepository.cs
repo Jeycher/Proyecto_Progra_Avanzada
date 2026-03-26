@@ -83,5 +83,35 @@ namespace TurismoRural_API.Repositories
                   FROM Usuario
                   WHERE ID_Usuario = @ID_Usuario", parameters);
         }
+
+        public async Task<bool> UpdateAsync(User user)
+        {
+            using var connection = _context.CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ID_Usuario", user.ID_Usuario);
+            parameters.Add("@Nombre", user.Nombre);
+            parameters.Add("@Correo", user.Correo);
+            parameters.Add("@Contrasena", user.Contrasena);
+            parameters.Add("@ID_Rol", string.Equals(user.ID_Rol, "Administrador", StringComparison.OrdinalIgnoreCase) ? 1 : 2);
+
+            var result = await connection.ExecuteAsync(
+                @"UPDATE Usuario 
+                  SET Nombre = @Nombre, Correo = @Correo, Contrasena = @Contrasena, ID_Rol = @ID_Rol
+                  WHERE ID_Usuario = @ID_Usuario", parameters);
+
+            return result > 0;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            using var connection = _context.CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ID_Usuario", id);
+
+            var result = await connection.ExecuteAsync(
+                @"DELETE FROM Usuario WHERE ID_Usuario = @ID_Usuario", parameters);
+
+            return result > 0;
+        }
     }
 }
