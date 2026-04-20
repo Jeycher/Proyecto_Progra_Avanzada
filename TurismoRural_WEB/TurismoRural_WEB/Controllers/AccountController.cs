@@ -38,8 +38,9 @@ namespace TurismoRural_WEB.Controllers
             HttpContext.Session.SetString("NombreUsuario", response.Nombre);
             HttpContext.Session.SetString("CorreoUsuario", response.Correo);
             HttpContext.Session.SetString("TokenUsuario", response.Token);
+            HttpContext.Session.SetString("RegistroExitoso", "true");
 
-            return RedirectToAction("Profile");
+            return RedirectToAction("Index", "Home");
         }
         [HttpGet]
         public IActionResult Register()

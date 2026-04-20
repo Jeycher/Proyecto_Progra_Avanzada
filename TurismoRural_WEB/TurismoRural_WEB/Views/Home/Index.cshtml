@@ -1,5 +1,16 @@
 ﻿@{
     ViewData["Title"] = "Inicio";
+    var usuario = Context.Session.GetString("NombreUsuario");
+    var registroExitoso = Context.Session.GetString("RegistroExitoso");
+}
+
+@if (!string.IsNullOrEmpty(usuario) || registroExitoso == "true")
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-top: 20px;">
+        <strong>¡Bienvenido!</strong> Hola @(usuario ?? ""), acceso concedido al sistema.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    Context.Session.Remove("RegistroExitoso");
 }
 
 <div class="hero-section">
@@ -7,38 +18,14 @@
         <h1>Descubre la magia del Turismo Rural</h1>
         <p>Vive experiencias auténticas, apoya comunidades locales y conecta con la naturaleza.</p>
 
-        <a class="btn btn-success btn-lg me-2" asp-controller="Account" asp-action="Register">
-            Registrarse
-        </a>
-        <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">
-            Iniciar Sesión
-        </a>
-    </div>
-</div>
-
-<div class="container mt-5">
-    <h2 class="text-center section-title">¿Por qué elegir Turismo Rural?</h2>
-
-    <div class="row g-4 mt-3">
-        <div class="col-md-4">
-            <div class="card info-card p-4 h-100 text-center">
-                <h4>🌿 Naturaleza</h4>
-                <p>Disfruta de destinos llenos de paisajes, tranquilidad y aire puro.</p>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card info-card p-4 h-100 text-center">
-                <h4>🏡 Autenticidad</h4>
-                <p>Conoce comunidades reales, sus costumbres y su identidad cultural.</p>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card info-card p-4 h-100 text-center">
-                <h4>🤝 Impacto Local</h4>
-                <p>Apoya directamente a familias y emprendimientos rurales.</p>
-            </div>
-        </div>
+        @if (string.IsNullOrEmpty(usuario))
+        {
+            <a class="btn btn-success btn-lg me-2" asp-controller="Account" asp-action="Register">
+                Registrarse
+            </a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">
+                Iniciar Sesión
+            </a>
+        }
     </div>
 </div>

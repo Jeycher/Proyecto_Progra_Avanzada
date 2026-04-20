@@ -13,12 +13,6 @@ BEGIN
 END
 GO
 
--- TURISMORURAL DATABASE - SETUP WITH JWT & PASSWORD ENCRYPTION
--- Las contraseñas se encriptan con AES-256 en la API
--- Los tokens JWT tienen validez de 10 minutos
-
---CREATE DATABASE TurismoRural;
-
 USE TurismoRural;
 GO
 
@@ -27,95 +21,6 @@ GO
 -- =========================================
 
 IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Rol')
-CREATE TABLE Rol (
-    ID_Rol INT PRIMARY KEY IDENTITY(1,1),
-    Rol_Nombre VARCHAR(50) NOT NULL
-);
-GO
-
-CREATE TABLE Usuario (
-    ID_Usuario INT PRIMARY KEY IDENTITY(1,1),
-    Nombre VARCHAR(100) NOT NULL,
-    Correo VARCHAR(100) UNIQUE NOT NULL,
-    Telefono VARCHAR(20),
-    Contrasena VARCHAR(255) NOT NULL,
-    ID_Rol INT NOT NULL,
-    Fecha_Registro DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (ID_Rol) REFERENCES Rol(ID_Rol)
-);
-GO
-
-CREATE TABLE Comunidad (
-    ID_Comunidad INT PRIMARY KEY IDENTITY(1,1),
-    Nombre_Comunidad VARCHAR(50) NOT NULL,
-	Pais VARCHAR(50) NOT NULL,
-	Provincia VARCHAR(30),
-    Descripcion VARCHAR(255),
-);
-GO
-
-CREATE TABLE Experiencia (
-    ID_Experiencia INT PRIMARY KEY IDENTITY(1,1),
-    Titulo VARCHAR(50) NOT NULL,
-    Descripcion VARCHAR(150),
-    Categoria VARCHAR(150),
-	UsuarioIdRegistrador  INT,
-    ID_Comunidad INT,
-    FOREIGN KEY (ID_Comunidad) REFERENCES Comunidad(ID_Comunidad),
-	FOREIGN KEY (UsuarioIdRegistrador) REFERENCES Usuario(ID_Usuario)
-);
-GO
-
-CREATE TABLE ExperienciaConcurrencia (
-    ID_Concurrencia INT PRIMARY KEY IDENTITY(1,1),
-    Fecha DATE,
-	Detalle NVARCHAR(255),
-	Precio DECIMAL,
-    Cupos_Disponibles INT,
-    ID_Experiencia INT,
-    FOREIGN KEY (ID_Experiencia) REFERENCES Experiencia(ID_Experiencia)
-);
-GO
-
-CREATE TABLE Reserva ( 
-    ID_Reserva INT PRIMARY KEY IDENTITY(1,1),
-    Fecha_Reserva DATE,
-    Cantidad_Personas INT,
-    Estado INT,
-    ID_Usuario INT,
-    ID_Concurrencia INT,
-    FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario),
-	FOREIGN KEY (ID_Concurrencia) REFERENCES ExperienciaConcurrencia(ID_Concurrencia)
-);
-GO
-
-create table CatalogoEstado(
-    ID_estado INT PRIMARY KEY,
-    Descripcion VARCHAR(50)
-);          
-go
-
-CREATE TABLE ErrorSistema (
-    ID_Error INT PRIMARY KEY IDENTITY(1,1),
-    MensajeError VARCHAR(500),
-    StackTrace VARCHAR(MAX),
-    Metodo VARCHAR(100),
-    Fecha DATETIME DEFAULT GETDATE()
-);
-GO
-
----------------------- Procedimientos almacenados -------------------------------------
--- Las contraseñas recibidas están encriptadas por la API
--- Clave AES: G7kP2mX9Qa4ZtL8wR1bY6HcD3sN5uFjV
-
--- Registrar usuario
-CREATE PROCEDURE SP_RegistrarUsuario
-	@Nombre VARCHAR(100),
-	@Correo VARCHAR(100),
-	@Telefono VARCHAR(20),
-	@Contrasena VARCHAR(255),
-	@ID_Rol INT
-AS
 BEGIN
     CREATE TABLE Rol (
         ID_Rol INT PRIMARY KEY IDENTITY(1,1),
@@ -247,10 +152,10 @@ BEGIN
     INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
     VALUES
     ('Mercedes Norte', 'Costa Rica', 'Heredia', 'Alegre y urbana comunidad'),
-    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona monta�osa'),
+    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona montañosa'),
     ('Monteverde', 'Costa Rica', 'Puntarenas', 'Alta biodiversidad'),
-    ('La Fortuna', 'Costa Rica', 'Alajuela', 'Volc�n Arenal'),
-    ('Puerto Viejo', 'Costa Rica', 'Lim�n', 'Cultura caribe�a');
+    ('La Fortuna', 'Costa Rica', 'Alajuela', 'Volcán Arenal'),
+    ('Puerto Viejo', 'Costa Rica', 'Limón', 'Cultura caribeña');
 END
 GO
 
@@ -260,20 +165,20 @@ BEGIN
     INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
     VALUES
     ('Tour en canopy', 'Tirolesa en bosque', 'Aventura', 1, 1),
-    ('Caminata volc�n Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
-    ('Clase de surf', 'Surf b�sico', 'Deportes', 1, 5);
+    ('Caminata volcán Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
+    ('Clase de surf', 'Surf básico', 'Deportes', 1, 5);
 END
 GO
 
 -- Insert Experience Concurrences (if not exists)
-IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy ma�ana')
+IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy mañana')
 BEGIN
     INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
     VALUES
-    ('2026-04-10', 'Canopy ma�ana', 50.00, 10, 1),
+    ('2026-04-10', 'Canopy mañana', 50.00, 10, 1),
     ('2026-04-11', 'Canopy tarde', 55.00, 8, 1),
-    ('2026-04-15', 'Caminata volc�n', 40.00, 15, 2),
-    ('2026-04-20', 'Surf b�sico', 30.00, 12, 3),
+    ('2026-04-15', 'Caminata volcán', 40.00, 15, 2),
+    ('2026-04-20', 'Surf básico', 30.00, 12, 3),
     ('2026-04-21', 'Surf intermedio', 35.00, 10, 3);
 END
 GO
@@ -388,12 +293,6 @@ BEGIN
         Categoria,
         UsuarioIdRegistrador,
         ID_Comunidad
-    INSERT INTO Reserva (
-        Fecha_Reserva,
-        Cantidad_Personas,  
-		ID_Usuario,
-        Estado,
-        ID_Concurrencia
     )
     VALUES (
         @Titulo,
@@ -540,17 +439,6 @@ BEGIN
         Cupos_Disponibles = @Cupos_Disponibles,
         ID_Experiencia = @ID_Experiencia
     WHERE ID_Concurrencia = @ID_Concurrencia;
-	UPDATE Comunidad
-	SET Nombre_Comunidad = @Nombre_Comunidad,
-		Pais = @Pais,
-		Provincia = @Provincia,
-		Descripcion = @Descripcion
-	WHERE ID_Comunidad = @ID_Comunidad;
-
-	IF @@ROWCOUNT = 0
-		PRINT 'No se encontró ninguna comunidad con el ID proporcionado.';
-	ELSE
-		PRINT 'Comunidad actualizada con éxito.';
 END;
 GO
 
@@ -784,55 +672,10 @@ CREATE PROCEDURE sp_CrearReserva
 AS
 BEGIN
     SET NOCOUNT ON;
-	INSERT INTO Rol (Rol_Nombre) VALUES ('Usuario');
-
--- Datos de prueba (comentados)
-/*
-INSERT INTO Usuario (Nombre, Correo, Telefono, Contrasena, ID_Rol)
-VALUES 
-('Carlos Méndez', 'carlos.mendez@gmail.com', '88881111', 'encrypted_password', 1),
-('Ana Rodríguez', 'ana.rodriguez@gmail.com', '88882222', 'encrypted_password', 2),
-('Luis Fernández', 'luis.fernandez@gmail.com', '88883333', 'encrypted_password', 2),
-('María Gómez', 'maria.gomez@gmail.com', '88884444', 'encrypted_password', 2),
-('José Vargas', 'jose.vargas@gmail.com', '88885555', 'encrypted_password', 1);
-
-INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
-VALUES
-('Mercedes Norte' , 'Costa Rica', 'Heredia', 'Alegre y urbana comunidad de Mercedes Norte.'),
-('San Rafael' , 'Costa Rica', 'Heredia', 'Ciudad en los altos de Heredia, bastante fria con mucho verde.');
-
-
-
-
-INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (1, 'Pendiente');
-INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (2, 'Confirmada');
-INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (3, 'Cancelada');
-INSERT INTO CatalogoEstado (ID_estado, Descripcion) VALUES (4, 'Completada');
-
-INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
-VALUES
-('2026-04-10', 'Tour en canopy por la mañana', 50.00, 10, 1),
-('2026-04-11', 'Tour en canopy por la tarde', 55.00, 8, 1),
-('2026-04-15', 'Caminata guiada al volcán', 40.00, 15, 2),
-('2026-04-20', 'Clase de surf para principiantes', 30.00, 12, 3),
-('2026-04-21', 'Clase de surf intermedio', 35.00, 10, 3);
-
-INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
-VALUES
-('Tour en canopy', 'Recorrido en tirolesa por el bosque', 'Aventura', 1, 1),
-('Caminata volcán Arenal', 'Exploración guiada cerca del volcán', 'Naturaleza', 2, 2),
-('Clase de surf', 'Aprende a surfear en el Caribe', 'Deportes', 1, 3);
-
-INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
-VALUES
-('Monteverde', 'Costa Rica', 'Puntarenas', 'Zona turística famosa por su biodiversidad'),
-('La Fortuna', 'Costa Rica', 'Alajuela', 'Destino popular por el volcán Arenal'),
-('Puerto Viejo', 'Costa Rica', 'Limón', 'Comunidad costera con cultura caribeña');
-
 
     IF @Cantidad_Personas <= 0
     BEGIN
-        RAISERROR('Cantidad de personas inv�lida', 16, 1);
+        RAISERROR('Cantidad de personas inválida', 16, 1);
         RETURN;
     END
 
@@ -895,5 +738,3 @@ BEGIN
     SELECT 1 AS Resultado;
 END;
 GO
-select * from Usuario;
-select * from reserva;

@@ -11,6 +11,7 @@ html {
 body {
     margin: 0;
     padding: 0;
+    padding-bottom: 80px;
     background-color: #f8f9fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #2c3e50;

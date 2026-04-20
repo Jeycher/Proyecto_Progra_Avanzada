@@ -1,0 +1,74 @@
+@{
+    ViewData["Title"] = "Centro de Reservas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/reservations.css" />
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>Centro de Reservas</h1>
+        <p>Gestiona todas tus experiencias y reservas en un solo lugar</p>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="cards-grid">
+        <!-- Card 1: Nueva Reserva -->
+        <div class="card-module">
+            <div class="card-icon">📝</div>
+            <div class="card-content">
+                <div class="card-title">Nueva Reserva</div>
+                <p class="card-description">Crea una nueva reserva para cualquiera de nuestras experiencias. Selecciona la fecha, cantidad de personas y ¡comienza tu aventura!</p>
+                <a href="@Url.Action("Create", "Reservation")" class="card-button">Crear Reserva</a>
+            </div>
+        </div>
+
+        <!-- Card 2: Mis Reservas -->
+        <div class="card-module">
+            <div class="card-icon">📋</div>
+            <div class="card-content">
+                <div class="card-title">Mis Reservas</div>
+                <p class="card-description">Visualiza todas tus reservas actuales. Consulta estados, detalles de experiencias y gestiona tus bookings.</p>
+                <a href="@Url.Action("MyReservations", "Reservation")" class="card-button">Ver Mis Reservas</a>
+            </div>
+        </div>
+
+        <!-- Card 3: Buscar Reserva -->
+        <div class="card-module">
+            <div class="card-icon">🔍</div>
+            <div class="card-content">
+                <div class="card-title">Buscar Reserva</div>
+                <p class="card-description">Busca una reserva específica por su ID. Obtén acceso rápido a los detalles de cualquier booking.</p>
+                <a href="@Url.Action("SearchReservations", "Reservation")" class="card-button">Buscar</a>
+            </div>
+        </div>
+
+        <!-- Card 4: Todas las Reservas (Admin) -->
+        <div class="card-module">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+                <div class="card-title">Todas las Reservas</div>
+                <p class="card-description">Vista administrativa de todas las reservas en el sistema. Perfecto para seguimiento y análisis.</p>
+                <a href="@Url.Action("AllReservations", "Reservation")" class="card-button">Ver Todo</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+        <h3>Tips Útiles</h3>
+        <ul>
+            <li>Crea reservas con anticipación para asegurar disponibilidad</li>
+            <li>Puedes cambiar el estado de tus reservas en cualquier momento</li>
+            <li>Todos nuestros estados de reserva son: Pendiente, Confirmada, Cancelada o Completada</li>
+            <li>Si necesitas ayuda, contacta a nuestro equipo de soporte</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+        <a href="@Url.Action("Index", "Home")" class="back-button">Volver al Inicio</a>
+        <p style="margin-top: 20px;">¿Tienes preguntas? Consulta nuestra sección de ayuda o contacta con nosotros.</p>
+    </div>
+</div>
