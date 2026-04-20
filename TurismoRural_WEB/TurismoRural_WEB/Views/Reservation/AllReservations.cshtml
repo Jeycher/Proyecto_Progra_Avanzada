@@ -1,82 +1,119 @@
-﻿@model List<TurismoRural_WEB.Models.Reservation.Reservation>
+@model TurismoRural_WEB.Models.Reservation.AllReservationsViewModel
 @{
     ViewData["Title"] = "Todas las Reservas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>📊 Todas las Reservas</h2>
+<link rel="stylesheet" href="~/css/reservations.css" />
 
-@if (!string.IsNullOrEmpty(ViewBag.Error))
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @ViewBag.Error
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-@if (Model == null || Model.Count == 0)
-{
-    <div class="alert alert-info">No hay reservas registradas.</div>
-}
-else
-{
-    <div class="alert alert-info">
-        Total de reservas: <strong>@Model.Count</strong>
+<div class="all-reservations-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                <h1>📊 Todas las Reservas</h1>
+                <p>Vista administrativa completa de todas las reservas del sistema</p>
+            </div>
+            <a href="@Url.Action("Dashboard", "Reservation")" class="btn-back">← Volver al Centro</a>
+        </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID Reserva</th>
-                    <th>Fecha Reserva</th>
-                    <th>ID Usuario</th>
-                    <th>Experiencia</th>
-                    <th>Cantidad Personas</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var reserva in Model)
-                {
-                    <tr>
-                        <td>@reserva.ID_Reserva</td>
-                        <td>@reserva.Fecha_Reserva.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>@reserva.ID_Usuario</td>
-                        <td>@reserva.NombreConcurrencia</td>
-                        <td>@reserva.Cantidad_Personas</td>
-                        <td>
-                            @switch (reserva.Estado)
-                            {
-                                case 1:
-                                    <span class="badge bg-warning">Pendiente</span>
-                                    break;
-                                case 2:
-                                    <span class="badge bg-success">Confirmada</span>
-                                    break;
-                                case 3:
-                                    <span class="badge bg-danger">Cancelada</span>
-                                    break;
-                                case 4:
-                                    <span class="badge bg-info">Completada</span>
-                                    break;
-                                default:
-                                    <span class="badge bg-secondary">Desconocido</span>
-                                    break;
-                            }
-                        </td>
-                        <td>
-                            <a href="@Url.Action("SearchReservations", new { reservaId = reserva.ID_Reserva })" class="btn btn-sm btn-primary">
-                                Detalles
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+    <!-- Error Alert -->
+    @if (!string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="alert-error">
+            ⚠️ @ViewBag.Error
+        </div>
+    }
 
-<a href="@Url.Action("Index", "Home")" class="btn btn-secondary mt-3">
-    Volver al Inicio
-</a>
+    <!-- Empty State -->
+    @if (Model == null || Model.Reservations == null || Model.Reservations.Count == 0)
+    {
+        <div class="alert-empty">
+            <div class="no-data-icon">📭</div>
+            <h3>No hay reservas registradas</h3>
+            <p>Cuando se creen reservas, aparecerán aquí.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Total de Reservas</div>
+                <div class="stat-value">@Model.Reservations.Count</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Confirmadas</div>
+                <div class="stat-value">@Model.Reservations.Count(r => r.Estado == 2)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-value">@Model.Reservations.Count(r => r.Estado == 1)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completadas</div>
+                <div class="stat-value">@Model.Reservations.Count(r => r.Estado == 4)</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID Reserva</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Experiencia</th>
+                            <th>Personas</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reserva in Model.Reservations)
+                        {
+                            <tr>
+                                <td><span class="reservation-id">#@reserva.ID_Reserva</span></td>
+                                <td>@reserva.Fecha_Reserva.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@reserva.ID_Usuario</td>
+                                <td>@reserva.NombreConcurrencia</td>
+                                <td><strong>@reserva.Cantidad_Personas</strong></td>
+                                <td>
+                                    <form method="post" action="@Url.Action("UpdateReservationStatus", "Reservation")" style="display: inline;">
+                                        <div style="display: flex; gap: 5px; align-items: center;">
+                                            <select name="newStatus" class="form-select" style="max-width: 150px; font-size: 0.9rem;">
+                                                @{
+                                                    foreach (var estado in Model.Estados)
+                                                    {
+                                                        if (reserva.Estado == estado.iD_estado)
+                                                        {
+                                                            @:<option value="@estado.iD_estado" selected>@estado.descripcion</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            @:<option value="@estado.iD_estado">@estado.descripcion</option>
+                                                        }
+                                                    }
+                                                }
+                                            </select>
+                                            <input type="hidden" name="reservationId" value="@reserva.ID_Reserva" />
+                                            <button type="submit" class="btn btn-sm btn-success" style="font-size: 0.85rem; padding: 4px 8px;">Actualizar</button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("SearchReservations", new { reservaId = reserva.ID_Reserva })" class="btn-action-table">
+                                        Ver Detalles
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
