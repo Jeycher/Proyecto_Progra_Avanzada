@@ -152,10 +152,10 @@ BEGIN
     INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
     VALUES
     ('Mercedes Norte', 'Costa Rica', 'Heredia', 'Alegre y urbana comunidad'),
-    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona montañosa'),
+    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona montaÃ±osa'),
     ('Monteverde', 'Costa Rica', 'Puntarenas', 'Alta biodiversidad'),
-    ('La Fortuna', 'Costa Rica', 'Alajuela', 'Volcán Arenal'),
-    ('Puerto Viejo', 'Costa Rica', 'Limón', 'Cultura caribeña');
+    ('La Fortuna', 'Costa Rica', 'Alajuela', 'VolcÃ¡n Arenal'),
+    ('Puerto Viejo', 'Costa Rica', 'LimÃ³n', 'Cultura caribeÃ±a');
 END
 GO
 
@@ -165,20 +165,20 @@ BEGIN
     INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
     VALUES
     ('Tour en canopy', 'Tirolesa en bosque', 'Aventura', 1, 1),
-    ('Caminata volcán Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
-    ('Clase de surf', 'Surf básico', 'Deportes', 1, 5);
+    ('Caminata volcÃ¡n Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
+    ('Clase de surf', 'Surf bÃ¡sico', 'Deportes', 1, 5);
 END
 GO
 
 -- Insert Experience Concurrences (if not exists)
-IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy mañana')
+IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy maÃ±ana')
 BEGIN
     INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
     VALUES
-    ('2026-04-10', 'Canopy mañana', 50.00, 10, 1),
+    ('2026-04-10', 'Canopy maÃ±ana', 50.00, 10, 1),
     ('2026-04-11', 'Canopy tarde', 55.00, 8, 1),
-    ('2026-04-15', 'Caminata volcán', 40.00, 15, 2),
-    ('2026-04-20', 'Surf básico', 30.00, 12, 3),
+    ('2026-04-15', 'Caminata volcÃ¡n', 40.00, 15, 2),
+    ('2026-04-20', 'Surf bÃ¡sico', 30.00, 12, 3),
     ('2026-04-21', 'Surf intermedio', 35.00, 10, 3);
 END
 GO
@@ -675,7 +675,7 @@ BEGIN
 
     IF @Cantidad_Personas <= 0
     BEGIN
-        RAISERROR('Cantidad de personas inválida', 16, 1);
+        RAISERROR('Cantidad de personas invÃ¡lida', 16, 1);
         RETURN;
     END
 

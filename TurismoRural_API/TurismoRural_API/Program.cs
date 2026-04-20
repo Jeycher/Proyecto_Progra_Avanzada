@@ -10,6 +10,7 @@ builder.Services.AddScoped<TurismoRural_API.Interfaces.IExperienciaRepository, T
 builder.Services.AddScoped<TurismoRural_API.Interfaces.IExperienciaConcurrenciaRepository, TurismoRural_API.Repositories.ExperienciaConcurrenciaRepository>();
 builder.Services.AddScoped<TurismoRural_API.Interfaces.IReservationRepository, TurismoRural_API.Repositories.ReservationRepository>();
 builder.Services.AddScoped<TurismoRural_API.Interfaces.IComunidadRepository, TurismoRural_API.Repositories.ComunidadRepository>();
+builder.Services.AddScoped<TurismoRural_API.Interfaces.ICatalogRepository, TurismoRural_API.Repositories.CatalogRepository>();
 // Password helper/service
 builder.Services.AddScoped<TurismoRural_API.Services.IPasswordHelper, TurismoRural_API.Services.PasswordHelper>();
 

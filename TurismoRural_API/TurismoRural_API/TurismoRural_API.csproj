@@ -18,10 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="BD_SP\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="JN_API\**" />
   </ItemGroup>
 

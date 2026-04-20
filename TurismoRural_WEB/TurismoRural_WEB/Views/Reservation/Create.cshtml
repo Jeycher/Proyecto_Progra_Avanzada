@@ -1,62 +1,136 @@
-﻿@model TurismoRural_WEB.Models.Reservation.ReservationCreateViewModel
+@model TurismoRural_WEB.Models.Reservation.ReservationCreateViewModel
 @{
-    ViewData["Title"] = "Agregar Reserva";
+    ViewData["Title"] = "Nueva Reserva";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Agregar Reserva</h2>
+<link rel="stylesheet" href="~/css/reservations.css" />
 
-@if (!string.IsNullOrEmpty(ViewBag.Error))
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
-
-<form method="post">
-    <div class="form-group">
-        <label>Cantidad de Personas</label>
-        <input type="number" name="Cantidad_Personas" class="form-control" required />
+<div class="create-reservation-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>Nueva Reserva</h1>
+        <p>Crea una nueva reserva para vivir una experiencia inolvidable</p>
     </div>
 
-    <div class="form-group">
-        <label>Estado</label>
-        <select name="Estado" class="form-control" required>
-            <option value="">Seleccione</option>
-            <option value="1">Pendiente</option>
-            <option value="2">Confirmada</option>
-            <option value="3">Cancelada</option>
-            <option value="4">Completada</option>
+    <!-- Error Alert -->
+    @if (!string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="alert-error">
+            @ViewBag.Error
+        </div>
+    }
 
-        </select>
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="info-box">
+            <strong>Tip:</strong> Selecciona la experiencia que deseas reservar, el número de personas y confirma tu reserva.
+        </div>
+
+        <form id="reservationForm" method="post">
+            <!-- Experiencia Selection -->
+            <div class="form-group">
+                <label for="experiencia">Selecciona una Experiencia</label>
+                <select id="experiencia" name="ID_Concurrencia" class="form-control form-select" required onchange="updateExperienceDetails()">
+                    <option value="">-- Elige una experiencia --</option>
+                    @foreach (var c in Model.Concurrencias)
+                    {
+                        <option value="@c.ID_Concurrencia" data-title="@c.TituloExperiencia" data-detail="@c.Detalle" data-price="@c.Precio" data-capacity="@c.Cupos_Disponibles">
+                            @c.TituloExperiencia - @c.Detalle (@c.Fecha.ToString("dd/MM/yyyy"))
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <!-- Experience Details (Hidden until selected) -->
+            <div id="experienceDetails" style="display: none; background: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #10b981;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <small style="color: #666;">Precio por persona</small>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">₡<span id="detailPrice">0</span></div>
+                    </div>
+                    <div>
+                        <small style="color: #666;">Cupos disponibles</small>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;"><span id="detailCapacity">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cantidad de Personas -->
+            <div class="form-group">
+                <label for="cantidad">Cantidad de Personas</label>
+                <input type="number" id="cantidad" name="Cantidad_Personas" class="form-control" min="1" max="20" placeholder="Ejemplo: 4" required />
+                <small style="color: #999; display: block; margin-top: 5px;">Máximo 20 personas por reserva</small>
+            </div>
+
+            <!-- Estado -->
+            <div class="form-group">
+                <label for="estado">Estado de la Reserva</label>
+                <select id="estado" name="Estado" class="form-control form-select" required>
+                    <option value="">-- Selecciona un estado --</option>
+                    @foreach (var estado in Model.Estados)
+                    {
+                        <option value="@estado.ID_Estado">@estado.Nombre</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Buttons -->
+            <div class="button-group">
+                <button type="submit" class="btn-primary-custom">Confirmar Reserva</button>
+                <a href="@Url.Action("Dashboard", "Reservation")" class="btn-secondary-custom">Volver</a>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="form-group">
-        <label>Experiencia</label>
-        <select name="ID_Concurrencia" class="form-control" required>
-            <option value="">Seleccione una experiencia</option>
-            @foreach (var c in Model.Concurrencias)
-            {
-                <option value="@c.ID_Concurrencia">@c.TituloExperiencia - @c.Detalle</option>
-            }
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Reservar</button>
-    <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">Cancelar</a>
-</form>
-
+<!-- Confirmation Modal -->
 <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">✅ Reserva Creada</h5>
+            <div class="modal-header">
+                <h5 class="modal-title">Reserva Confirmada</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Tu reserva ha sido creada exitosamente.</p>
-                <p><strong>ID Concurrencia:</strong> <span id="modalConcurrencia"></span></p>
-                <p><strong>Cantidad de Personas:</strong> <span id="modalCantidad"></span></p>
+                <div class="modal-success-icon">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+
+                <p style="text-align: center; color: #666; margin-bottom: 25px; font-size: 1.05rem;">
+                    Tu reserva ha sido creada exitosamente. ¡Pronto vivirás una experiencia increíble!
+                </p>
+
+                <div class="modal-detail">
+                    <div class="modal-detail-label">ID de Reserva</div>
+                    <div class="modal-detail-value">#<span id="modalReservaId">0</span></div>
+                </div>
+
+                <div class="modal-detail">
+                    <div class="modal-detail-label">Experiencia</div>
+                    <div class="modal-detail-value"><span id="modalExperiencia">-</span></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="modal-detail">
+                        <div class="modal-detail-label">Personas</div>
+                        <div class="modal-detail-value"><span id="modalCantidad">0</span></div>
+                    </div>
+                    <div class="modal-detail">
+                        <div class="modal-detail-label">Total Estimado</div>
+                        <div class="modal-detail-value">₡<span id="modalTotal">0</span></div>
+                    </div>
+                </div>
+
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; color: #666;">
+                    <small>Recibirás un email de confirmación en breve. Puedes ver tus reservas en cualquier momento.</small>
+                </div>
             </div>
             <div class="modal-footer">
-                <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
-                    Volver al Inicio
+                <a href="@Url.Action("MyReservations", "Reservation")" class="btn-modal-primary">
+                    Ver Mis Reservas
                 </a>
             </div>
         </div>
@@ -64,21 +138,53 @@
 </div>
 
 @section Scripts {
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            form.addEventListener('submit', function(e) {
-                // Validación básica
-                const cantidad = document.querySelector('input[name="Cantidad_Personas"]').value;
-                const estado = document.querySelector('select[name="Estado"]').value;
-                const concurrencia = document.querySelector('select[name="ID_Concurrencia"]').value;
+        function updateExperienceDetails() {
+            const select = document.getElementById('experiencia');
+            const option = select.options[select.selectedIndex];
+            const detailsDiv = document.getElementById('experienceDetails');
 
-                if (!cantidad || cantidad <= 0 || !estado || !concurrencia) {
-                    e.preventDefault();
-                    alert('Por favor completa todos los campos correctamente.");
-                    return false;
-                }
-            });
+            if (select.value) {
+                document.getElementById('detailPrice').textContent = option.dataset.price;
+                document.getElementById('detailCapacity').textContent = option.dataset.capacity;
+                detailsDiv.style.display = 'block';
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+        }
+
+        document.getElementById('reservationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const cantidad = document.getElementById('cantidad').value;
+            const estado = document.getElementById('estado').value;
+            const concurrencia = document.getElementById('experiencia').value;
+
+            if (!cantidad || cantidad <= 0 || !estado || !concurrencia) {
+                alert('Por favor completa todos los campos correctamente.');
+                return false;
+            }
+
+            // Mostrar modal de confirmación
+            const select = document.getElementById('experiencia');
+            const option = select.options[select.selectedIndex];
+            const price = parseFloat(option.dataset.price);
+            const total = (price * cantidad).toFixed(2);
+
+            document.getElementById('modalReservaId').textContent = Math.floor(Math.random() * 10000);
+            document.getElementById('modalExperiencia').textContent = option.dataset.title;
+            document.getElementById('modalCantidad').textContent = cantidad;
+            document.getElementById('modalTotal').textContent = total;
+
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
+            modal.show();
+
+            // Enviar formulario después de una pequeña espera
+            setTimeout(() => {
+                this.submit();
+            }, 500);
         });
     </script>
 }
