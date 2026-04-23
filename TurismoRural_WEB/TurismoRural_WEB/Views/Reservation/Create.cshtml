@@ -47,7 +47,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <small style="color: #666;">Precio por persona</small>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">₡<span id="detailPrice">0</span></div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">$<span id="detailPrice">0</span></div>
                     </div>
                     <div>
                         <small style="color: #666;">Cupos disponibles</small>
@@ -63,17 +63,8 @@
                 <small style="color: #999; display: block; margin-top: 5px;">Máximo 20 personas por reserva</small>
             </div>
 
-            <!-- Estado -->
-            <div class="form-group">
-                <label for="estado">Estado de la Reserva</label>
-                <select id="estado" name="Estado" class="form-control form-select" required>
-                    <option value="">-- Selecciona un estado --</option>
-                    @foreach (var estado in Model.Estados)
-                    {
-                        <option value="@estado.ID_Estado">@estado.Nombre</option>
-                    }
-                </select>
-            </div>
+            <!-- Estado fijo: Pendiente (1) -->
+            <input type="hidden" id="estado" name="Estado" value="1" />
 
             <!-- Buttons -->
             <div class="button-group">
@@ -89,18 +80,12 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Reserva Confirmada</h5>
+                <h5 class="modal-title">Confirmar Reserva</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="modal-success-icon">
-                    <svg fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-
                 <p style="text-align: center; color: #666; margin-bottom: 25px; font-size: 1.05rem;">
-                    Tu reserva ha sido creada exitosamente. ¡Pronto vivirás una experiencia increíble!
+                    ¿Confirmas los datos de tu reserva?
                 </p>
 
                 <div class="modal-detail">
@@ -128,10 +113,9 @@
                     <small>Recibirás un email de confirmación en breve. Puedes ver tus reservas en cualquier momento.</small>
                 </div>
             </div>
-            <div class="modal-footer">
-                <a href="@Url.Action("MyReservations", "Reservation")" class="btn-modal-primary">
-                    Ver Mis Reservas
-                </a>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: center;">
+                <button type="button" id="btnConfirmarReserva" class="btn-modal-primary">Confirmar</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
             </div>
         </div>
     </div>
@@ -154,6 +138,19 @@
             }
         }
 
+        // Pre-seleccionar la sesión si viene por URL (?concurrenciaId=X)
+        (function preseleccionarSesion() {
+            const params = new URLSearchParams(window.location.search);
+            const concurrenciaId = params.get('concurrenciaId');
+            if (!concurrenciaId) return;
+            const select = document.getElementById('experiencia');
+            const option = Array.from(select.options).find(o => o.value === concurrenciaId);
+            if (option) {
+                select.value = concurrenciaId;
+                updateExperienceDetails();
+            }
+        })();
+
         document.getElementById('reservationForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -161,7 +158,7 @@
             const estado = document.getElementById('estado').value;
             const concurrencia = document.getElementById('experiencia').value;
 
-            if (!cantidad || cantidad <= 0 || !estado || !concurrencia) {
+            if (!cantidad || cantidad <= 0 || !concurrencia) {
                 alert('Por favor completa todos los campos correctamente.');
                 return false;
             }
@@ -181,10 +178,11 @@
             const modal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
             modal.show();
 
-            // Enviar formulario después de una pequeña espera
-            setTimeout(() => {
-                this.submit();
-            }, 500);
+            // Enviar formulario solo cuando el usuario confirma
+            const form = this;
+            document.getElementById('btnConfirmarReserva').onclick = function() {
+                form.submit();
+            };
         });
     </script>
 }

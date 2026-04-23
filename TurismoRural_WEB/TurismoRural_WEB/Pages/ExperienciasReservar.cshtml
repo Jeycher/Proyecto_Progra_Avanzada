@@ -1,0 +1,185 @@
+@page
+@model TurismoRural_WEB.Pages.ExperienciasReservarModel
+@{
+    ViewData["Title"] = "Experiencias";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/reservations.css" />
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1>Experiencias Disponibles</h1>
+        <p>Explora y reserva las mejores experiencias turísticas de la región</p>
+    </div>
+
+    <!-- Filters Section -->
+    <div style="background: white; border-radius: 12px; padding: 30px; margin-bottom: 40px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1); border: 2px solid #f0fdf4;">
+        <div style="font-size: 1.3rem; font-weight: 700; color: #10b981; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">🔍 Filtrar Experiencias</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="nombreFiltro" style="font-weight: 600; color: #333; margin-bottom: 8px; display: block;">Buscar por título:</label>
+                <input type="text" id="nombreFiltro" placeholder="Ej: Tour en canopy..." style="width: 100%; padding: 12px 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; background-color: #fafafa;" />
+            </div>
+            <div>
+                <label for="categoriaFiltro" style="font-weight: 600; color: #333; margin-bottom: 8px; display: block;">Filtrar por categoría:</label>
+                <select id="categoriaFiltro" style="width: 100%; padding: 12px 15px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem; background-color: #fafafa;">
+                    <option value="">Todas las categorías</option>
+                </select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="card-button" onclick="renderizarTabla()" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); padding: 12px 20px;">🔎 Filtrar</button>
+            <button class="card-button" onclick="limpiarFiltros()" style="flex: 1; background: white; color: #10b981; border: 2px solid #10b981; padding: 12px 20px;">✖️ Limpiar</button>
+        </div>
+    </div>
+
+    <!-- Experiencias Content -->
+    <div id="experienciasContent">
+        <!-- Experiencias se cargarán aquí -->
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+        <a href="@Url.Page("/Index")" class="back-button">← Volver al Inicio</a>
+        <p>¿Necesitas ayuda? Contacta a nuestro equipo de soporte</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let experiencias = [];
+    let categorias = new Set();
+
+    // Cargar experiencias desde el servidor
+    async function cargarExperiencias() {
+        try {
+            const loader = document.getElementById('experienciasContent');
+            loader.innerHTML = '<div style="text-align: center; padding: 40px; color: #10b981; font-weight: 600;">Cargando experiencias...</div>';
+
+            const response = await fetch(window.location.pathname + '?handler=GetExperiencias', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+            const data = await response.json();
+            console.log('Experiencias:', data);
+
+            // Mapear respuesta
+            experiencias = data.map(item => ({
+                id: item.id || item.iD_Experiencia,
+                titulo: item.titulo || item.nombre,
+                descripcion: item.descripcion,
+                categoria: item.categoria || 'Sin categoría',
+                usuarioId: item.usuarioIdRegistrador,
+                comunidadId: item.iD_Comunidad,
+                nombreComunidad: item.nombre_Comunidad || 'Comunidad desconocida'
+            }));
+
+            // Extraer categorías únicas
+            categorias.clear();
+            experiencias.forEach(exp => {
+                if (exp.categoria) {
+                    categorias.add(exp.categoria);
+                }
+            });
+
+            // Llenar selector de categorías
+            const selectCategoria = document.getElementById('categoriaFiltro');
+            selectCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+            Array.from(categorias).sort().forEach(cat => {
+                selectCategoria.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+
+            renderizarTabla();
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('experienciasContent').innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; background: #f0fdf4; border-radius: 12px; margin: 40px 0;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">⚠️</div>
+                    <h3 style="color: #10b981; font-size: 1.5rem; margin-bottom: 10px;">Error al cargar experiencias</h3>
+                    <p style="color: #666; font-size: 1rem; margin-bottom: 10px;">No pudimos cargar los datos.</p>
+                    <p style="color: #999; font-size: 0.85rem; margin-bottom: 25px;"><strong>Error:</strong> ${error.message}</p>
+                    <button class="card-button" onclick="cargarExperiencias()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 32px; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer;">🔄 Reintentar</button>
+                </div>
+            `;
+        }
+    }
+
+    function renderizarTabla() {
+        const nombreFiltro = document.getElementById('nombreFiltro')?.value?.toLowerCase() || '';
+        const categoriaFiltro = document.getElementById('categoriaFiltro')?.value || '';
+
+        let experienciasFiltradas = experiencias.filter(e => {
+            const cumpleTitulo = !nombreFiltro || (e.titulo && e.titulo.toLowerCase().includes(nombreFiltro));
+            const cumpleCategoria = !categoriaFiltro || e.categoria === categoriaFiltro;
+            return cumpleTitulo && cumpleCategoria;
+        });
+
+        // Ordenar por título
+        experienciasFiltradas.sort((a, b) => a.titulo.localeCompare(b.titulo));
+
+        const contenido = document.getElementById('experienciasContent');
+
+        if (experienciasFiltradas.length === 0) {
+            contenido.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; background: #f0fdf4; border-radius: 12px; margin: 40px 0;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
+                    <h3 style="color: #10b981; font-size: 1.5rem; margin-bottom: 10px;">No hay experiencias</h3>
+                    <p style="color: #666; font-size: 1rem; margin-bottom: 25px;">No encontramos experiencias que coincidan con tus filtros.</p>
+                    <button class="card-button" onclick="limpiarFiltros()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 32px; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer;">🔄 Limpiar filtros</button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="cards-grid">';
+        experienciasFiltradas.forEach(e => {
+            const expId = e.id || e.Id || e.iD_Experiencia || e.ID_Experiencia || 0;
+            const expComunidad = e.comunidad || e.Comunidad || e.nombre_Comunidad || e.nombreComunidad || '';
+            html += `
+                <div class="card-module">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #10b981, #34d399); font-size: 2rem;">🎯</div>
+                    <div class="card-content">
+                        <div style="font-size: 0.8rem; color: #10b981; background: #f0fdf4; padding: 4px 12px; border-radius: 20px; margin-bottom: 8px; display: inline-block; font-weight: 600;">${e.categoria || e.Categoria}</div>
+                        <div class="card-title">${e.titulo || e.Titulo}</div>
+                        <p class="card-description">${e.descripcion || e.Descripcion}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-top: 1px solid #e5e7eb; margin-bottom: 15px;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: #999;">Comunidad</div>
+                                <span style="font-size: 1.1rem; font-weight: 700; color: #10b981;">${expComunidad}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="irAVerSesiones(${expId})" class="card-button" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 10px 15px; font-size: 0.9rem; border: none; border-radius: 8px; cursor: pointer;">&#x1F4C5; Ver Sesiones</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        contenido.innerHTML = html;
+    }
+
+    function irAVerSesiones(experienciaId) {
+        // Redirigir a la página de sesiones con la experiencia seleccionada
+        window.location.href = '@Url.Page("/Sesiones")' + '?experienciaId=' + experienciaId;
+    }
+
+    function limpiarFiltros() {
+        document.getElementById('nombreFiltro').value = '';
+        document.getElementById('categoriaFiltro').value = '';
+        renderizarTabla();
+    }
+
+    // Event listeners
+    document.getElementById('nombreFiltro').addEventListener('input', renderizarTabla);
+    document.getElementById('categoriaFiltro').addEventListener('change', renderizarTabla);
+
+    // Cargar al inicio
+    window.addEventListener('load', cargarExperiencias);
+</script>
+}

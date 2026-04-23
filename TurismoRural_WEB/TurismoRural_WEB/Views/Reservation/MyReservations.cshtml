@@ -74,27 +74,39 @@
 
                         <div class="reservation-detail">
                             <span class="reservation-detail-label">Estado</span>
-                            <form method="post" action="@Url.Action("UpdateReservationStatus", "Reservation")" style="display: inline;">
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <select name="newStatus" class="form-select" style="flex: 1; max-width: 200px;">
-                                        @{
-                                            foreach (var estado in Model.Estados)
-                                            {
-                                                if (reserva.Estado == estado.iD_estado)
+                            @if (Model.EsAdmin)
+                            {
+                                <form method="post" action="@Url.Action("UpdateReservationStatus", "Reservation")" style="display: inline;">
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <select name="newStatus" class="form-select" style="flex: 1; max-width: 200px;">
+                                            @{
+                                                foreach (var estado in Model.Estados)
                                                 {
-                                                    @:<option value="@estado.iD_estado" selected>@estado.descripcion</option>
-                                                }
-                                                else
-                                                {
-                                                    @:<option value="@estado.iD_estado">@estado.descripcion</option>
+                                                    if (reserva.Estado == estado.iD_estado)
+                                                    {
+                                                        @:<option value="@estado.iD_estado" selected>@estado.descripcion</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        @:<option value="@estado.iD_estado">@estado.descripcion</option>
+                                                    }
                                                 }
                                             }
-                                        }
-                                    </select>
-                                    <input type="hidden" name="reservationId" value="@reserva.ID_Reserva" />
-                                    <button type="submit" class="btn btn-sm btn-success">Actualizar</button>
-                                </div>
-                            </form>
+                                        </select>
+                                        <input type="hidden" name="reservationId"    value="@reserva.ID_Reserva" />
+                                        <input type="hidden" name="userId"           value="@reserva.ID_Usuario" />
+                                        <input type="hidden" name="concurrenciaId"   value="@reserva.ID_Concurrencia" />
+                                        <input type="hidden" name="cantidadPersonas" value="@reserva.Cantidad_Personas" />
+                                        <input type="hidden" name="returnTo"         value="MyReservations" />
+                                        <button type="submit" class="btn btn-sm btn-success">Actualizar</button>
+                                    </div>
+                                </form>
+                            }
+                            else
+                            {
+                                var estadoNombre = Model.Estados.FirstOrDefault(e => e.iD_estado == reserva.Estado)?.descripcion ?? reserva.Estado.ToString();
+                                <span class="reservation-detail-value">@estadoNombre</span>
+                            }
                         </div>
                     </div>
 

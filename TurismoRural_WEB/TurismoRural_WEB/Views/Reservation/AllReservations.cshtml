@@ -26,6 +26,20 @@
         </div>
     }
 
+    <!-- TempData Messages -->
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert-success" style="background:#d1fae5;border-left:4px solid #10b981;padding:14px 18px;border-radius:8px;margin-bottom:20px;color:#065f46;font-weight:500;">
+            ✅ @TempData["MensajeExito"]
+        </div>
+    }
+    @if (TempData["MensajeError"] != null)
+    {
+        <div class="alert-error">
+            ⚠️ @TempData["MensajeError"]
+        </div>
+    }
+
     <!-- Empty State -->
     @if (Model == null || Model.Reservations == null || Model.Reservations.Count == 0)
     {
@@ -99,13 +113,17 @@
                                                     }
                                                 }
                                             </select>
-                                            <input type="hidden" name="reservationId" value="@reserva.ID_Reserva" />
+                                            <input type="hidden" name="reservationId"      value="@reserva.ID_Reserva" />
+                                            <input type="hidden" name="userId"             value="@reserva.ID_Usuario" />
+                                            <input type="hidden" name="concurrenciaId"     value="@reserva.ID_Concurrencia" />
+                                            <input type="hidden" name="cantidadPersonas"   value="@reserva.Cantidad_Personas" />
+                                            <input type="hidden" name="returnTo"           value="AllReservations" />
                                             <button type="submit" class="btn btn-sm btn-success" style="font-size: 0.85rem; padding: 4px 8px;">Actualizar</button>
                                         </div>
                                     </form>
                                 </td>
                                 <td>
-                                    <a href="@Url.Action("SearchReservations", new { reservaId = reserva.ID_Reserva })" class="btn-action-table">
+                                    <a href="@Url.Action("SearchReservations", "Reservation", new { id = reserva.ID_Reserva })" class="btn-action-table">
                                         Ver Detalles
                                     </a>
                                 </td>

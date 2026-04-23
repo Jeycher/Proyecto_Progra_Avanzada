@@ -18,57 +18,32 @@ namespace TurismoRural_WEB.Controllers
                 _httpClientFactory = httpClientFactory;
             }
 
+        private static readonly List<EstadoDto> _estadosFallback = new()
+        {
+            new EstadoDto { iD_estado = 1, descripcion = "Pendiente" },
+            new EstadoDto { iD_estado = 2, descripcion = "Confirmada" },
+            new EstadoDto { iD_estado = 3, descripcion = "Cancelada" },
+            new EstadoDto { iD_estado = 4, descripcion = "Completada" }
+        };
+
         private async Task<List<EstadoDto>> GetEstadosFromApiAsync()
         {
             try
             {
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
                 var estadosResponse = await client.GetAsync("https://localhost:7054/api/Catalog/estados");
-                var estadosJson = await estadosResponse.Content.ReadAsStringAsync();
 
                 if (!estadosResponse.IsSuccessStatusCode)
-                {
-                    return new List<EstadoDto>();
-                }
+                    return _estadosFallback;
 
-                // Intentar deserializar directamente como lista
-                try
-                {
-                    var estados = JsonSerializer.Deserialize<List<EstadoDto>>(estadosJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    if (estados != null && estados.Count > 0)
-                        return estados;
-                }
-                catch
-                {
-                    // Si falla, intentar deserializar como objeto con propiedad "data" o "estados"
-                    try
-                    {
-                        var wrapper = JsonSerializer.Deserialize<JsonElement>(estadosJson);
-                        if (wrapper.ValueKind == JsonValueKind.Object)
-                        {
-                            // Buscar propiedades comunes que contengan los estados
-                            foreach (var property in wrapper.EnumerateObject())
-                            {
-                                if (property.Value.ValueKind == JsonValueKind.Array)
-                                {
-                                    var estados = JsonSerializer.Deserialize<List<EstadoDto>>(property.Value.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                                    if (estados != null && estados.Count > 0)
-                                        return estados;
-                                }
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Silent fail
-                    }
-                }
+                var estadosJson = await estadosResponse.Content.ReadAsStringAsync();
+                var estados = JsonSerializer.Deserialize<List<EstadoDto>>(estadosJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                return new List<EstadoDto>();
+                return estados != null && estados.Count > 0 ? estados : _estadosFallback;
             }
             catch
             {
-                return new List<EstadoDto>();
+                return _estadosFallback;
             }
         }
 
@@ -83,7 +58,7 @@ namespace TurismoRural_WEB.Controllers
         {
             try
             {
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
 
                 // Obtener concurrencias
                 var concurrenciasResponse = await client.GetAsync("https://localhost:7054/api/ExperienciasConcurrencia");
@@ -124,7 +99,7 @@ namespace TurismoRural_WEB.Controllers
         {
             try
             {
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
 
                 var concurrenciasResponse = await client.GetAsync("https://localhost:7054/api/ExperienciasConcurrencia");
                 var concurrenciasJson = await concurrenciasResponse.Content.ReadAsStringAsync();
@@ -175,7 +150,7 @@ namespace TurismoRural_WEB.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Error al procesar la reserva: " + ex.Message);
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
                 var concurrenciasResponse = await client.GetAsync("https://localhost:7054/api/ExperienciasConcurrencia");
                 var concurrenciasJson = await concurrenciasResponse.Content.ReadAsStringAsync();
                 var estados = await GetEstadosFromApiAsync();
@@ -194,7 +169,7 @@ namespace TurismoRural_WEB.Controllers
                 if (usuarioId == null)
                     return RedirectToAction("Login", "Account");
 
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
                 var response = await client.GetAsync($"https://localhost:7054/api/Reservations/by-user/{usuarioId}");
 
                 if (!response.IsSuccessStatusCode)
@@ -213,7 +188,8 @@ namespace TurismoRural_WEB.Controllers
                 var model = new MyReservationsViewModel
                 {
                     Reservations = reservas,
-                    Estados = estados
+                    Estados = estados,
+                    EsAdmin = HttpContext.Session.GetString("RolUsuario") == "1"
                 };
 
                 return View(model);
@@ -227,57 +203,36 @@ namespace TurismoRural_WEB.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SearchReservations()
+        public async Task<IActionResult> SearchReservations(int? id)
         {
             var estados = await GetEstadosFromApiAsync();
-            var model = new SearchReservationsViewModel { Estados = estados };
-            return View(model);
-        }
 
-        [HttpPost]
-        public async Task<IActionResult> SearchReservations(int? reservaId)
-        {
+            if (!id.HasValue || id <= 0)
+            {
+                var emptyModel = new SearchReservationsViewModel { Estados = estados };
+                return View(emptyModel);
+            }
+
             try
             {
-                if (!reservaId.HasValue || reservaId <= 0)
-                {
-                    ViewBag.Error = "Por favor ingresa un ID de reserva válido.";
-                    var estados = await GetEstadosFromApiAsync();
-                    var emptyModel = new SearchReservationsViewModel { Estados = estados };
-                    return View(emptyModel);
-                }
-
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.GetAsync($"https://localhost:7054/api/Reservations/{reservaId}");
+                var client = _httpClientFactory.CreateClient("default");
+                var response = await client.GetAsync($"https://localhost:7054/api/Reservations/{id}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    ViewBag.Error = $"No se encontró la reserva con ID {reservaId}.";
-                    var estados = await GetEstadosFromApiAsync();
-                    var emptyModel = new SearchReservationsViewModel { Estados = estados };
-                    return View(emptyModel);
+                    ViewBag.Error = $"No se encontró la reserva con ID {id}.";
+                    return View(new SearchReservationsViewModel { Estados = estados });
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
                 var reserva = JsonSerializer.Deserialize<Reservation>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                // Cargar estados
-                var estadosData = await GetEstadosFromApiAsync();
-
-                var model = new SearchReservationsViewModel
-                {
-                    Reservation = reserva,
-                    Estados = estadosData
-                };
-
-                return View(model);
+                return View(new SearchReservationsViewModel { Reservation = reserva, Estados = estados });
             }
             catch (Exception ex)
             {
                 ViewBag.Error = "Error al buscar la reserva: " + ex.Message;
-                var estados = await GetEstadosFromApiAsync();
-                var emptyModel = new SearchReservationsViewModel { Estados = estados };
-                return View(emptyModel);
+                return View(new SearchReservationsViewModel { Estados = estados });
             }
         }
 
@@ -286,7 +241,7 @@ namespace TurismoRural_WEB.Controllers
         {
             try
             {
-                var client = _httpClientFactory.CreateClient();
+                var client = _httpClientFactory.CreateClient("default");
                 var response = await client.GetAsync("https://localhost:7054/api/Reservations");
 
                 if (!response.IsSuccessStatusCode)
@@ -319,31 +274,42 @@ namespace TurismoRural_WEB.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateReservationStatus(int reservationId, int newStatus)
+        public async Task<IActionResult> UpdateReservationStatus(
+            int reservationId, int newStatus,
+            int userId, int concurrenciaId, int cantidadPersonas,
+            string returnTo = "MyReservations")
         {
             try
             {
-                var client = _httpClientFactory.CreateClient();
-                var updateData = new { estado = newStatus };
-                var content = new StringContent(JsonSerializer.Serialize(updateData), Encoding.UTF8, "application/json");
+                var client = _httpClientFactory.CreateClient("default");
 
-                var response = await client.PutAsync($"https://localhost:7054/api/Reservations/{reservationId}", content);
-
-                if (response.IsSuccessStatusCode)
+                var updateData = new
                 {
-                    TempData["MensajeExito"] = "Estado de la reserva actualizado correctamente.";
+                    iD_Usuario        = userId,
+                    iD_Concurrencia   = concurrenciaId,
+                    cantidad_Personas = cantidadPersonas,
+                    estado            = newStatus
+                };
+
+                var content = new StringContent(JsonSerializer.Serialize(updateData), Encoding.UTF8, "application/json");
+                var putResponse = await client.PutAsync($"https://localhost:7054/api/Reservations/{reservationId}", content);
+                var responseBody = await putResponse.Content.ReadAsStringAsync();
+
+                if (putResponse.IsSuccessStatusCode || putResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    TempData["MensajeExito"] = "Estado actualizado correctamente.";
                 }
                 else
                 {
-                    TempData["MensajeError"] = "No se pudo actualizar el estado de la reserva.";
+                    TempData["MensajeError"] = $"Error {(int)putResponse.StatusCode}: {responseBody}";
                 }
 
-                return RedirectToAction("MyReservations");
+                return RedirectToAction(returnTo);
             }
             catch (Exception ex)
             {
                 TempData["MensajeError"] = "Error al actualizar: " + ex.Message;
-                return RedirectToAction("MyReservations");
+                return RedirectToAction(returnTo);
             }
         }
     }

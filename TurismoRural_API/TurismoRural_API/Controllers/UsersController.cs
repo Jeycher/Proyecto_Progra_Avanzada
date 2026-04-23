@@ -37,7 +37,7 @@ namespace TurismoRural_API.Controllers
 
         [AllowAnonymous]
         [HttpPost("RegistroUsuario")]
-        public IActionResult RegistroUsuario(RegistrarUsuarioRequest model)
+        public async Task<IActionResult> RegistroUsuario(RegistrarUsuarioRequest model)
         {
             using var context = new SqlConnection(_config.GetValue<string>("ConnectionStrings:DefaultConnection"));
             var parametros = new DynamicParameters();
@@ -47,12 +47,32 @@ namespace TurismoRural_API.Controllers
             parametros.Add("@Contrasena", _passwordHelper.Encrypt(model.Contrasenna));
             parametros.Add("@ID_Rol", 2); // Default role for new users
 
-            var result = context.Execute("SP_RegistrarUsuario", parametros, commandType: System.Data.CommandType.StoredProcedure);
+            try
+            {
+                var id = context.QueryFirstOrDefault<int>(
+                    "SP_RegistrarUsuario", 
+                    parametros, 
+                    commandType: System.Data.CommandType.StoredProcedure
+                );
 
-            if (result <= 0)
-                return BadRequest("Su información no se registró correctamente");
+                if (id <= 0)
+                    return BadRequest("Su información no se registró correctamente");
 
-            return Ok("Su información se registró correctamente");
+                var response = new RegistroResponse
+                {
+                    Id = id,
+                    Nombre = model.Nombre,
+                    Correo = model.CorreoElectronico,
+                    Mensaje = "Su información se registró correctamente"
+                };
+
+                return CreatedAtAction(nameof(GetById), new { id = id }, response);
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(UsersController) + ".RegistroUsuario", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
         }
 
         [AllowAnonymous]
@@ -65,7 +85,7 @@ namespace TurismoRural_API.Controllers
             parametros.Add("@Correo", model.CorreoElectronico);
 
             var user = context.QueryFirstOrDefault<dynamic>(
-                @"SELECT ID_Usuario, Nombre, Correo, Contrasena
+                @"SELECT ID_Usuario, Nombre, Correo, Contrasena, ID_Rol
                   FROM Usuario
                   WHERE Correo = @Correo",
                 parametros);
@@ -82,6 +102,7 @@ namespace TurismoRural_API.Controllers
                 Id = user.ID_Usuario,
                 Nombre = user.Nombre,
                 Correo = user.Correo,
+                Rol = user.ID_Rol,
                 Token = GenerarToken(user.ID_Usuario)
             };
 

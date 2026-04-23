@@ -83,12 +83,12 @@ namespace TurismoRural_API.Repositories
             var parameters = new DynamicParameters();
             parameters.Add("@ID_Experiencia", id);
 
-            var affected = await connection.ExecuteAsync(
+            var result = await connection.QuerySingleAsync<int>(
                 "SP_EliminarExperiencia",
                 parameters,
                 commandType: System.Data.CommandType.StoredProcedure);
 
-            return affected > 0;
+            return result > 0;
         }
     }
 }

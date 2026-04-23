@@ -34,6 +34,22 @@ namespace TurismoRural_API.Controllers
             }
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            try
+            {
+                var item = await _repo.GetByIdAsync(id);
+                if (item == null) return NotFound();
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                await ErrorLogger.LogAsync(_context, nameof(ComunidadesController) + ".Get", ex.Message, ex.StackTrace);
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ComunidadCreateRequest model)
         {

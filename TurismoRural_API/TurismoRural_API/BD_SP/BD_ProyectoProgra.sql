@@ -152,10 +152,10 @@ BEGIN
     INSERT INTO Comunidad (Nombre_Comunidad, Pais, Provincia, Descripcion)
     VALUES
     ('Mercedes Norte', 'Costa Rica', 'Heredia', 'Alegre y urbana comunidad'),
-    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona montaÃ±osa'),
+    ('San Rafael', 'Costa Rica', 'Heredia', 'Zona montañosa'),
     ('Monteverde', 'Costa Rica', 'Puntarenas', 'Alta biodiversidad'),
-    ('La Fortuna', 'Costa Rica', 'Alajuela', 'VolcÃ¡n Arenal'),
-    ('Puerto Viejo', 'Costa Rica', 'LimÃ³n', 'Cultura caribeÃ±a');
+    ('La Fortuna', 'Costa Rica', 'Alajuela', 'Volcán Arenal'),
+    ('Puerto Viejo', 'Costa Rica', 'Limón', 'Cultura caribeña');
 END
 GO
 
@@ -165,20 +165,20 @@ BEGIN
     INSERT INTO Experiencia (Titulo, Descripcion, Categoria, UsuarioIdRegistrador, ID_Comunidad)
     VALUES
     ('Tour en canopy', 'Tirolesa en bosque', 'Aventura', 1, 1),
-    ('Caminata volcÃ¡n Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
-    ('Clase de surf', 'Surf bÃ¡sico', 'Deportes', 1, 5);
+    ('Caminata volcán Arenal', 'Tour guiado', 'Naturaleza', 1, 4),
+    ('Clase de surf', 'Surf básico', 'Deportes', 1, 5);
 END
 GO
 
 -- Insert Experience Concurrences (if not exists)
-IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy maÃ±ana')
+IF NOT EXISTS (SELECT 1 FROM ExperienciaConcurrencia WHERE Detalle = 'Canopy mañana')
 BEGIN
     INSERT INTO ExperienciaConcurrencia (Fecha, Detalle, Precio, Cupos_Disponibles, ID_Experiencia)
     VALUES
-    ('2026-04-10', 'Canopy maÃ±ana', 50.00, 10, 1),
+    ('2026-04-10', 'Canopy mañana', 50.00, 10, 1),
     ('2026-04-11', 'Canopy tarde', 55.00, 8, 1),
-    ('2026-04-15', 'Caminata volcÃ¡n', 40.00, 15, 2),
-    ('2026-04-20', 'Surf bÃ¡sico', 30.00, 12, 3),
+    ('2026-04-15', 'Caminata volcán', 40.00, 15, 2),
+    ('2026-04-20', 'Surf básico', 30.00, 12, 3),
     ('2026-04-21', 'Surf intermedio', 35.00, 10, 3);
 END
 GO
@@ -673,28 +673,73 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validar cantidad de personas
     IF @Cantidad_Personas <= 0
     BEGIN
-        RAISERROR('Cantidad de personas invÃ¡lida', 16, 1);
+        RAISERROR('Cantidad de personas inválida', 16, 1);
         RETURN;
     END
 
-    INSERT INTO Reserva (
-        Fecha_Reserva,
-        Cantidad_Personas,
-        Estado,
-        ID_Usuario,
-        ID_Concurrencia
-    )
-    VALUES (
-        GETDATE(),
-        @Cantidad_Personas,
-        @Estado,
-        @ID_Usuario,
-        @ID_Concurrencia
-    );
+    -- Declarar variable para almacenar cupos disponibles
+    DECLARE @CuposDisponibles INT;
 
-    SELECT SCOPE_IDENTITY() AS ID_Reserva;
+    -- Obtener cupos disponibles de la concurrencia
+    SELECT @CuposDisponibles = Cupos_Disponibles
+    FROM ExperienciaConcurrencia
+    WHERE ID_Concurrencia = @ID_Concurrencia;
+
+    -- Validar que la concurrencia existe
+    IF @CuposDisponibles IS NULL
+    BEGIN
+        RAISERROR('La concurrencia especificada no existe', 16, 1);
+        RETURN;
+    END
+
+    -- Validar que hay suficientes cupos
+    IF @CuposDisponibles < @Cantidad_Personas
+    BEGIN
+        RAISERROR('No hay suficientes cupos disponibles para esta reserva', 16, 1);
+        RETURN;
+    END
+
+    -- Iniciar transacción para garantizar atomicidad
+    BEGIN TRANSACTION;
+
+    BEGIN TRY
+        -- Crear la reserva
+        INSERT INTO Reserva (
+            Fecha_Reserva,
+            Cantidad_Personas,
+            Estado,
+            ID_Usuario,
+            ID_Concurrencia
+        )
+        VALUES (
+            GETDATE(),
+            @Cantidad_Personas,
+            @Estado,
+            @ID_Usuario,
+            @ID_Concurrencia
+        );
+
+        -- Restar cupos disponibles
+        UPDATE ExperienciaConcurrencia
+        SET Cupos_Disponibles = Cupos_Disponibles - @Cantidad_Personas
+        WHERE ID_Concurrencia = @ID_Concurrencia;
+
+        -- Confirmar transacción
+        COMMIT TRANSACTION;
+
+        -- Retornar el ID de la reserva creada
+        SELECT SCOPE_IDENTITY() AS ID_Reserva;
+    END TRY
+    BEGIN CATCH
+        -- Revertir transacción en caso de error
+        ROLLBACK TRANSACTION;
+
+        -- Lanzar el error
+        THROW;
+    END CATCH
 END;
 GO
 
@@ -707,15 +752,110 @@ CREATE PROCEDURE sp_ActualizarReserva
     @Estado INT
 AS
 BEGIN
-    SET NOCOUNT OFF;
+    SET NOCOUNT ON;
 
-    UPDATE Reserva
-    SET 
-        ID_Usuario = @ID_Usuario,
-        ID_Concurrencia = @ID_Concurrencia,
-        Cantidad_Personas = @Cantidad_Personas,
-        Estado = @Estado
+    -- Validar cantidad de personas
+    IF @Cantidad_Personas <= 0
+    BEGIN
+        RAISERROR('Cantidad de personas inválida', 16, 1);
+        RETURN;
+    END
+
+    -- Declarar variables
+    DECLARE @Cantidad_Anterior INT;
+    DECLARE @ID_Concurrencia_Anterior INT;
+    DECLARE @CuposDisponibles INT;
+    DECLARE @Diferencia INT;
+
+    -- Obtener datos de la reserva anterior
+    SELECT 
+        @Cantidad_Anterior = Cantidad_Personas,
+        @ID_Concurrencia_Anterior = ID_Concurrencia
+    FROM Reserva
     WHERE ID_Reserva = @ID_Reserva;
+
+    -- Validar que la reserva existe
+    IF @Cantidad_Anterior IS NULL
+    BEGIN
+        RAISERROR('La reserva especificada no existe', 16, 1);
+        RETURN;
+    END
+
+    -- Si cambió la concurrencia, validar que la nueva existe
+    IF @ID_Concurrencia <> @ID_Concurrencia_Anterior
+    BEGIN
+        SELECT @CuposDisponibles = Cupos_Disponibles
+        FROM ExperienciaConcurrencia
+        WHERE ID_Concurrencia = @ID_Concurrencia;
+
+        IF @CuposDisponibles IS NULL
+        BEGIN
+            RAISERROR('La nueva concurrencia especificada no existe', 16, 1);
+            RETURN;
+        END
+
+        IF @CuposDisponibles < @Cantidad_Personas
+        BEGIN
+            RAISERROR('No hay suficientes cupos en la nueva concurrencia', 16, 1);
+            RETURN;
+        END
+    END
+    ELSE
+    BEGIN
+        -- Si es la misma concurrencia, validar cupos basado en la diferencia
+        SET @Diferencia = @Cantidad_Personas - @Cantidad_Anterior;
+
+        IF @Diferencia > 0
+        BEGIN
+            SELECT @CuposDisponibles = Cupos_Disponibles
+            FROM ExperienciaConcurrencia
+            WHERE ID_Concurrencia = @ID_Concurrencia;
+
+            IF @CuposDisponibles < @Diferencia
+            BEGIN
+                RAISERROR('No hay suficientes cupos para aumentar la cantidad de personas', 16, 1);
+                RETURN;
+            END
+        END
+    END
+
+    -- Iniciar transacción
+    BEGIN TRANSACTION;
+
+    BEGIN TRY
+        -- Actualizar la reserva
+        UPDATE Reserva
+        SET 
+            ID_Usuario = @ID_Usuario,
+            ID_Concurrencia = @ID_Concurrencia,
+            Cantidad_Personas = @Cantidad_Personas,
+            Estado = @Estado
+        WHERE ID_Reserva = @ID_Reserva;
+
+        -- Restaurar cupos de la concurrencia anterior y restar de la nueva
+        IF @ID_Concurrencia_Anterior <> @ID_Concurrencia OR @Cantidad_Anterior <> @Cantidad_Personas
+        BEGIN
+            UPDATE ExperienciaConcurrencia
+            SET Cupos_Disponibles = Cupos_Disponibles + @Cantidad_Anterior
+            WHERE ID_Concurrencia = @ID_Concurrencia_Anterior;
+
+            UPDATE ExperienciaConcurrencia
+            SET Cupos_Disponibles = Cupos_Disponibles - @Cantidad_Personas
+            WHERE ID_Concurrencia = @ID_Concurrencia;
+        END
+
+        -- Confirmar transacción
+        COMMIT TRANSACTION;
+
+        SELECT 1 AS Resultado;
+    END TRY
+    BEGIN CATCH
+        -- Revertir transacción en caso de error
+        ROLLBACK TRANSACTION;
+
+        -- Lanzar el error
+        THROW;
+    END CATCH
 END;
 GO
 
@@ -726,15 +866,48 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM Reserva WHERE ID_Reserva = @ID_Reserva)
+    -- Declarar variables
+    DECLARE @Cantidad_Personas INT;
+    DECLARE @ID_Concurrencia INT;
+
+    -- Obtener datos de la reserva a eliminar
+    SELECT 
+        @Cantidad_Personas = Cantidad_Personas,
+        @ID_Concurrencia = ID_Concurrencia
+    FROM Reserva
+    WHERE ID_Reserva = @ID_Reserva;
+
+    -- Validar que la reserva existe
+    IF @Cantidad_Personas IS NULL
     BEGIN
         SELECT 0 AS Resultado;
         RETURN;
     END
 
-    DELETE FROM Reserva
-    WHERE ID_Reserva = @ID_Reserva;
+    -- Iniciar transacción
+    BEGIN TRANSACTION;
 
-    SELECT 1 AS Resultado;
+    BEGIN TRY
+        -- Eliminar la reserva
+        DELETE FROM Reserva
+        WHERE ID_Reserva = @ID_Reserva;
+
+        -- Restaurar los cupos
+        UPDATE ExperienciaConcurrencia
+        SET Cupos_Disponibles = Cupos_Disponibles + @Cantidad_Personas
+        WHERE ID_Concurrencia = @ID_Concurrencia;
+
+        -- Confirmar transacción
+        COMMIT TRANSACTION;
+
+        SELECT 1 AS Resultado;
+    END TRY
+    BEGIN CATCH
+        -- Revertir transacción en caso de error
+        ROLLBACK TRANSACTION;
+
+        -- Lanzar el error
+        THROW;
+    END CATCH
 END;
 GO

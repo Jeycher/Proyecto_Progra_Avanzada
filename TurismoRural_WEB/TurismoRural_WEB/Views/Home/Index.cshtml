@@ -2,6 +2,7 @@
     ViewData["Title"] = "Inicio";
     var usuario = Context.Session.GetString("NombreUsuario");
     var registroExitoso = Context.Session.GetString("RegistroExitoso");
+    var rol = Context.Session.GetString("RolUsuario");
 }
 
 @if (!string.IsNullOrEmpty(usuario) || registroExitoso == "true")
@@ -18,14 +19,36 @@
         <h1>Descubre la magia del Turismo Rural</h1>
         <p>Vive experiencias auténticas, apoya comunidades locales y conecta con la naturaleza.</p>
 
-        @if (string.IsNullOrEmpty(usuario))
+        @if (!string.IsNullOrEmpty(usuario))
         {
-            <a class="btn btn-success btn-lg me-2" asp-controller="Account" asp-action="Register">
-                Registrarse
-            </a>
-            <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">
-                Iniciar Sesión
-            </a>
+            <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                @if (rol == "1")
+                {
+                    <a class="btn btn-lg" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-weight: 600;" asp-page="/Experiencias">
+                        Ver Experiencias
+                    </a>
+                }
+                else if (rol == "2")
+                {
+                    <a class="btn btn-lg" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-weight: 600;" asp-page="/ExperienciasReservar">
+                        Ver Experiencias
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                <a class="btn btn-lg" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; padding: 12px 28px; font-weight: 600;" asp-page="/ExperienciasReservar">
+                    Ver Experiencias
+                </a>
+                <a class="btn btn-success btn-lg" asp-controller="Account" asp-action="Register">
+                    Registrarse
+                </a>
+                <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">
+                    Iniciar Sesión
+                </a>
+            </div>
         }
     </div>
 </div>

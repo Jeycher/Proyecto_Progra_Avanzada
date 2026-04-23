@@ -14,13 +14,14 @@ namespace TurismoRural_WEB.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string returnUrl = null)
         {
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -38,7 +39,17 @@ namespace TurismoRural_WEB.Controllers
             HttpContext.Session.SetString("NombreUsuario", response.Nombre);
             HttpContext.Session.SetString("CorreoUsuario", response.Correo);
             HttpContext.Session.SetString("TokenUsuario", response.Token);
+
+            // Guardar el rol como string "1" o "2"
+            var rolString = response.Rol.ToString();
+            HttpContext.Session.SetString("RolUsuario", rolString);
+
+            System.Diagnostics.Debug.WriteLine($"[LOGIN] Usuario: {response.Nombre}, Rol guardado: {rolString}");
+
             HttpContext.Session.SetString("RegistroExitoso", "true");
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
 
             return RedirectToAction("Index", "Home");
         }

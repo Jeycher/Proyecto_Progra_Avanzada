@@ -15,11 +15,11 @@
 
     <!-- Search Card -->
     <div class="search-card">
-        <form method="post">
+        <form method="get">
             <div class="form-group">
                 <label for="reservaId">ID de Reserva</label>
                 <div class="input-search">
-                    <input type="number" id="reservaId" name="reservaId" class="form-control" placeholder="Ejemplo: 123" required />
+                    <input type="number" id="reservaId" name="id" class="form-control" placeholder="Ejemplo: 123" required />
                     <button type="submit" class="btn-search">🔍 Buscar</button>
                 </div>
                 <small style="color: #999; display: block; margin-top: 8px;">Ingresa el número de ID de la reserva que deseas consultar</small>
@@ -79,13 +79,13 @@
                                     @{
                                         foreach (var estado in Model.Estados)
                                         {
-                                            if (Model.Reservation.Estado == estado.ID_Estado)
+                                            if (Model.Reservation.Estado == estado.iD_estado)
                                             {
-                                                @:<option value="@estado.ID_Estado" selected>@estado.Nombre</option>
+                                                @:<option value="@estado.iD_estado" selected>@estado.descripcion</option>
                                             }
                                             else
                                             {
-                                                @:<option value="@estado.ID_Estado">@estado.Nombre</option>
+                                                @:<option value="@estado.iD_estado">@estado.descripcion</option>
                                             }
                                         }
                                     }

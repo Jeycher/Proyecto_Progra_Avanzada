@@ -19,6 +19,15 @@ namespace TurismoRural_API.Repositories
             return await connection.QueryAsync<Comunidad>("SP_ConsultarComunidades", commandType: System.Data.CommandType.StoredProcedure);
         }
 
+        public async Task<Comunidad?> GetByIdAsync(int id)
+        {
+            using var connection = _context.CreateConnection();
+            var parameters = new DynamicParameters();
+            parameters.Add("@ID_Comunidad", id);
+            return await connection.QuerySingleOrDefaultAsync<Comunidad>(
+                "SELECT * FROM Comunidad WHERE ID_Comunidad = @ID_Comunidad;", parameters);
+        }
+
         public async Task<int> CreateAsync(Comunidad comunidad)
         {
             using var connection = _context.CreateConnection();

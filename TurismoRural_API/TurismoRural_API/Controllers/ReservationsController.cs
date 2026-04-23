@@ -94,7 +94,8 @@ namespace TurismoRural_API.Controllers
                 if (!ok)
                     return NotFound();
 
-                return Ok();
+                var updated = await _repo.GetByIdAsync(id);
+                return Ok(updated);
             }
             catch (Exception ex)
             {

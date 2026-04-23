@@ -75,6 +75,30 @@
                     <ul class="navbar-nav ms-auto">
                         @if (usuarioLogueado)
                         {
+                            @if (rol == "1")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-page="/Experiencias">
+                                        Mis Experiencias
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-page="/Sesiones">
+                                        Sesiones
+                                    </a>
+                                </li>
+                            }
+
+                            @if (rol == "2")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-page="/ExperienciasReservar">
+                                        Experiencias
+                                    </a>
+                                </li>
+                            }
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Reservation" asp-action="Dashboard">
                                     Centro de Reservas
