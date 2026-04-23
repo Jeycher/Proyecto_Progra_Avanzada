@@ -31,6 +31,19 @@
         </div>
     }
 
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div style="background:#f0fdf4; border:2px solid #10b981; border-radius:10px; padding:14px 20px; margin-bottom:20px; color:#065f46; font-weight:600;">
+            ✅ @TempData["MensajeExito"]
+        </div>
+    }
+    @if (TempData["MensajeError"] != null)
+    {
+        <div style="background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:20px; color:#991b1b; font-weight:600;">
+            ❌ @TempData["MensajeError"]
+        </div>
+    }
+
     <!-- Empty State -->
     @if (Model == null || Model.Reservations == null || Model.Reservations.Count == 0)
     {
@@ -111,10 +124,11 @@
                     </div>
 
                     <div class="reservation-footer">
-                        <button class="btn-small btn-small-primary" onclick="viewDetails(@reserva.ID_Reserva)">
-                            Detalles
-                        </button>
-                        <button class="btn-small btn-small-danger" onclick="cancelReservation(@reserva.ID_Reserva)">
+                        <form method="post" action="@Url.Action("CancelReservation", "Reservation")" id="cancelForm-@reserva.ID_Reserva">
+                            <input type="hidden" name="reservationId" value="@reserva.ID_Reserva" />
+                            @Html.AntiForgeryToken()
+                        </form>
+                        <button class="btn-small btn-small-danger" onclick="pedirCancelar(@reserva.ID_Reserva)">
                             Cancelar
                         </button>
                     </div>
@@ -124,16 +138,37 @@
     }
 </div>
 
+<!-- Modal cancelar reserva -->
+<div id="modalCancelar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:40px; max-width:400px; width:90%;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:3rem; margin-bottom:12px;">⚠️</div>
+            <h3 style="color:#dc2626; margin-bottom:8px;">Cancelar Reserva</h3>
+            <p style="color:#6b7280; margin:0;">¿Estás seguro de que deseas cancelar esta reserva? Esta acción no se puede deshacer.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="confirmarCancelar()" style="flex:1; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; border:none; padding:12px; border-radius:8px; font-weight:600; cursor:pointer;">Sí, cancelar</button>
+            <button onclick="cerrarModalCancelar()" style="flex:1; background:white; color:#6b7280; border:2px solid #e5e7eb; padding:12px; border-radius:8px; font-weight:600; cursor:pointer;">Volver</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    function viewDetails(id) {
-        alert(`Detalles de la reserva #${id}`);
-        // TODO: Implementar modal con detalles
+    let _cancelarId = null;
+
+    function pedirCancelar(id) {
+        _cancelarId = id;
+        document.getElementById('modalCancelar').style.display = 'flex';
     }
 
-    function cancelReservation(id) {
-        if (confirm(`¿Estás seguro de que deseas cancelar la reserva #${id}?`)) {
-            alert(`Reserva #${id} cancelada.`);
-            // TODO: Implementar cancelación real
+    function cerrarModalCancelar() {
+        document.getElementById('modalCancelar').style.display = 'none';
+        _cancelarId = null;
+    }
+
+    function confirmarCancelar() {
+        if (_cancelarId) {
+            document.getElementById('cancelForm-' + _cancelarId).submit();
         }
     }
 </script>

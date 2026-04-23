@@ -29,10 +29,6 @@ namespace TurismoRural_WEB.Pages
             EsAdmin = rolUsuario == "1";
             EsUsuario = rolUsuario == "2";
 
-            // Admins solo pueden acceder si están logueados
-            if (EsAdmin && userId == null)
-                return RedirectToPage("/Index");
-
             return Page();
         }
 
@@ -70,7 +66,7 @@ namespace TurismoRural_WEB.Pages
         {
             var usuarioId = HttpContext.Session.GetInt32("UsuarioId");
             if (usuarioId == null)
-                return new JsonResult(new { success = false, error = "No autenticado" });
+                return new JsonResult(new { success = false, requiresLogin = true });
 
             var reserva = new
             {
@@ -114,8 +110,17 @@ namespace TurismoRural_WEB.Pages
         // Eliminar concurrencia
         public async Task<IActionResult> OnPostDelete(int id)
         {
-            var result = await _experienciasService.DeleteConcurrenciaAsync(id);
-            return new JsonResult(new { success = result });
+            Console.Error.WriteLine($"OnPostDelete called with id={id}");
+            try
+            {
+                var result = await _experienciasService.DeleteConcurrenciaAsync(id);
+                Console.Error.WriteLine($"OnPostDelete result={result}");
+                return new JsonResult(new { success = result });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new JsonResult(new { success = false, error = ex.Message });
+            }
         }
     }
 }

@@ -62,6 +62,47 @@ namespace TurismoRural_WEB.Services
             }
         }
 
+        public async Task<List<dynamic>> GetComunidadesAsync()
+        {
+            try
+            {
+                var apiUrl = _configuration["Valores:UrlAPI"] + "Comunidades";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return new List<dynamic>();
+
+                var json = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<dynamic>>(json, options) ?? new List<dynamic>();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error en GetComunidadesAsync: {ex.Message}");
+                return new List<dynamic>();
+            }
+        }
+
+        // ============ EXPERIENCIAS BASE ============
+
+        public async Task<bool> CreateExperienciaAsync(dynamic experiencia)
+        {
+            try
+            {
+                var apiUrl = _configuration["Valores:UrlAPI"] + "experiencias";
+                var json = JsonSerializer.Serialize(experiencia);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error en CreateExperienciaAsync: {ex.Message}");
+                return false;
+            }
+        }
+
         // ============ EXPERIENCIAS CONCURRENCIA ============
 
         public async Task<List<dynamic>> GetConcurrenciasAsync()
@@ -113,7 +154,7 @@ namespace TurismoRural_WEB.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
-                return response.IsSuccessStatusCode;
+                return response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound;
             }
             catch (Exception ex)
             {
@@ -128,7 +169,10 @@ namespace TurismoRural_WEB.Services
             {
                 var apiUrl = _configuration["Valores:UrlAPI"] + $"experienciasconcurrencia/{id}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
-                return response.IsSuccessStatusCode;
+                Console.Error.WriteLine($"DeleteConcurrencia id={id} status={response.StatusCode}");
+                if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                    throw new InvalidOperationException("La sesión tiene reservas activas y no puede eliminarse.");
+                return response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound;
             }
             catch (Exception ex)
             {

@@ -23,9 +23,6 @@ namespace TurismoRural_WEB.Pages
 
             EsLoggedIn = userId != null && (rolUsuario == "1" || rolUsuario == "2");
 
-            if (!EsLoggedIn)
-                return Page();
-
             System.Diagnostics.Debug.WriteLine($"[ExperienciasReservar] UserId: {userId}, RolUsuario: '{rolUsuario}'");
 
             // Si es admin, redirigir al panel de admin de experiencias

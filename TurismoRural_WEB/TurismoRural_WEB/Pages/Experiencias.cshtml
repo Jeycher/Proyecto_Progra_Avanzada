@@ -7,11 +7,17 @@
 
 <link rel="stylesheet" href="~/css/reservations.css" />
 
+@Html.AntiForgeryToken()
+
 <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
         <h1>Mis Experiencias</h1>
         <p>Visualiza todas tus experiencias disponibles. Desde aquí puedes gestionar las sesiones de cada una.</p>
+    </div>
+
+    <div style="margin-bottom: 30px; text-align: right;">
+        <button class="card-button" onclick="mostrarModalCrear()" style="background: linear-gradient(135deg, #10b981, #059669); padding: 12px 24px;">+ Nueva Experiencia</button>
     </div>
 
     <!-- Filters Section -->
@@ -55,6 +61,36 @@
     <div class="footer-section">
         <a href="@Url.Page("/Index")" class="back-button">← Volver al Inicio</a>
         <p>¿Necesitas ayuda? Contacta a nuestro equipo de soporte</p>
+    </div>
+</div>
+
+<!-- Modal Nueva Experiencia -->
+<div id="modalCrearExp" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:40px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto;">
+        <h3 style="color:#10b981; margin-bottom:20px;">🎯 Nueva Experiencia</h3>
+        <div style="margin-bottom:15px;">
+            <label style="font-weight:600; color:#333; display:block; margin-bottom:8px;">Título: <span style="color:#dc2626;">*</span></label>
+            <input type="text" id="expTitulo" maxlength="50" placeholder="Ej: Tour en canopy" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:1rem; box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:15px;">
+            <label style="font-weight:600; color:#333; display:block; margin-bottom:8px;">Descripción:</label>
+            <textarea id="expDescripcion" maxlength="150" rows="3" placeholder="Descripción de la experiencia..." style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:1rem; resize:vertical; box-sizing:border-box;"></textarea>
+        </div>
+        <div style="margin-bottom:15px;">
+            <label style="font-weight:600; color:#333; display:block; margin-bottom:8px;">Categoría:</label>
+            <input type="text" id="expCategoria" maxlength="150" placeholder="Ej: Aventura, Naturaleza, Deportes..." style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:1rem; box-sizing:border-box;" />
+        </div>
+        <div style="margin-bottom:20px;">
+            <label style="font-weight:600; color:#333; display:block; margin-bottom:8px;">Comunidad: <span style="color:#dc2626;">*</span></label>
+            <select id="expComunidad" style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:1rem; background:#fafafa; box-sizing:border-box;">
+                <option value="">Cargando comunidades...</option>
+            </select>
+        </div>
+        <div id="crearExpMsg" style="margin-bottom:15px; display:none;"></div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="guardarExperiencia()" class="card-button" style="flex:1; background:linear-gradient(135deg,#10b981,#059669);">Guardar</button>
+            <button onclick="cerrarModalCrearExp()" class="card-button" style="flex:1; background:white; color:#10b981; border:2px solid #10b981;">Cancelar</button>
+        </div>
     </div>
 </div>
 
@@ -189,5 +225,88 @@
 
     // Cargar al inicio
     window.addEventListener('load', cargarExperiencias);
+
+    // ============ MODAL CREAR EXPERIENCIA ============
+
+    async function mostrarModalCrear() {
+        const select = document.getElementById('expComunidad');
+        select.innerHTML = '<option value="">Cargando comunidades...</option>';
+        document.getElementById('expTitulo').value = '';
+        document.getElementById('expDescripcion').value = '';
+        document.getElementById('expCategoria').value = '';
+        const msg = document.getElementById('crearExpMsg');
+        msg.style.display = 'none';
+        msg.innerHTML = '';
+        document.getElementById('modalCrearExp').style.display = 'flex';
+
+        try {
+            const response = await fetch(window.location.pathname + '?handler=GetComunidades');
+            const data = await response.json();
+            select.innerHTML = '<option value="">Selecciona una comunidad...</option>';
+            data.forEach(c => {
+                const id = c.iD_Comunidad ?? c.id_Comunidad ?? c.id;
+                const nombre = c.nombre_Comunidad ?? c.nombre ?? 'Comunidad ' + id;
+                select.innerHTML += `<option value="${id}">${nombre}</option>`;
+            });
+        } catch {
+            select.innerHTML = '<option value="">Error al cargar comunidades</option>';
+        }
+    }
+
+    function cerrarModalCrearExp() {
+        document.getElementById('modalCrearExp').style.display = 'none';
+    }
+
+    async function guardarExperiencia() {
+        const titulo = document.getElementById('expTitulo').value.trim();
+        const descripcion = document.getElementById('expDescripcion').value.trim();
+        const categoria = document.getElementById('expCategoria').value.trim();
+        const comunidadId = parseInt(document.getElementById('expComunidad').value);
+        const msg = document.getElementById('crearExpMsg');
+
+        if (!titulo) {
+            msg.style.display = 'block';
+            msg.innerHTML = '<span style="color:#dc2626;">El título es obligatorio.</span>';
+            return;
+        }
+        if (!comunidadId) {
+            msg.style.display = 'block';
+            msg.innerHTML = '<span style="color:#dc2626;">Debes seleccionar una comunidad.</span>';
+            return;
+        }
+
+        const btn = document.querySelector('#modalCrearExp button[onclick="guardarExperiencia()"]');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+        msg.style.display = 'none';
+
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+            const response = await fetch(window.location.pathname + '?handler=Create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                body: JSON.stringify({
+                    titulo: titulo,
+                    descripcion: descripcion,
+                    categoria: categoria,
+                    iD_Comunidad: comunidadId
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                cerrarModalCrearExp();
+                cargarExperiencias();
+            } else {
+                msg.style.display = 'block';
+                msg.innerHTML = '<span style="color:#dc2626;">' + (result.error || 'No se pudo crear la experiencia.') + '</span>';
+            }
+        } catch (error) {
+            msg.style.display = 'block';
+            msg.innerHTML = '<span style="color:#dc2626;">Error: ' + error.message + '</span>';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+        }
+    }
 </script>
 }

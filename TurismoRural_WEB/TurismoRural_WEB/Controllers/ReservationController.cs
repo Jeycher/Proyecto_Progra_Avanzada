@@ -56,6 +56,10 @@ namespace TurismoRural_WEB.Controllers
             [HttpGet]
             public async Task<IActionResult> Create()
         {
+            var userId = HttpContext.Session.GetInt32("UsuarioId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account", new { returnUrl = Request.Path + Request.QueryString });
+
             try
             {
                 var client = _httpClientFactory.CreateClient("default");
@@ -97,6 +101,10 @@ namespace TurismoRural_WEB.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(ReservationCreateViewModel model)
         {
+            var userId = HttpContext.Session.GetInt32("UsuarioId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
             try
             {
                 var client = _httpClientFactory.CreateClient("default");
@@ -311,6 +319,27 @@ namespace TurismoRural_WEB.Controllers
                 TempData["MensajeError"] = "Error al actualizar: " + ex.Message;
                 return RedirectToAction(returnTo);
             }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CancelReservation(int reservationId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("default");
+                var response = await client.DeleteAsync($"https://localhost:7054/api/Reservations/{reservationId}");
+
+                if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    TempData["MensajeExito"] = "Reserva cancelada correctamente.";
+                else
+                    TempData["MensajeError"] = $"No se pudo cancelar la reserva (Error {(int)response.StatusCode}).";
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = "Error al cancelar: " + ex.Message;
+            }
+
+            return RedirectToAction("MyReservations");
         }
     }
 }

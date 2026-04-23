@@ -60,7 +60,7 @@
             <div class="form-group">
                 <label for="cantidad">Cantidad de Personas</label>
                 <input type="number" id="cantidad" name="Cantidad_Personas" class="form-control" min="1" max="20" placeholder="Ejemplo: 4" required />
-                <small style="color: #999; display: block; margin-top: 5px;">Máximo 20 personas por reserva</small>
+                <small id="cantidadHelper" style="color: #999; display: block; margin-top: 5px;">Selecciona una experiencia primero</small>
             </div>
 
             <!-- Estado fijo: Pendiente (1) -->
@@ -128,13 +128,23 @@
             const select = document.getElementById('experiencia');
             const option = select.options[select.selectedIndex];
             const detailsDiv = document.getElementById('experienceDetails');
+            const cantidadInput = document.getElementById('cantidad');
+            const helper = document.getElementById('cantidadHelper');
 
             if (select.value) {
+                const cupos = parseInt(option.dataset.capacity) || 1;
                 document.getElementById('detailPrice').textContent = option.dataset.price;
-                document.getElementById('detailCapacity').textContent = option.dataset.capacity;
+                document.getElementById('detailCapacity').textContent = cupos;
                 detailsDiv.style.display = 'block';
+                cantidadInput.max = cupos;
+                if (parseInt(cantidadInput.value) > cupos) cantidadInput.value = cupos;
+                helper.textContent = `Máximo ${cupos} persona${cupos !== 1 ? 's' : ''} (cupos disponibles)`;
+                helper.style.color = '#10b981';
             } else {
                 detailsDiv.style.display = 'none';
+                cantidadInput.max = 20;
+                helper.textContent = 'Selecciona una experiencia primero';
+                helper.style.color = '#999';
             }
         }
 
@@ -160,6 +170,12 @@
 
             if (!cantidad || cantidad <= 0 || !concurrencia) {
                 alert('Por favor completa todos los campos correctamente.');
+                return false;
+            }
+
+            const cuposMax = parseInt(document.getElementById('experiencia').options[document.getElementById('experiencia').selectedIndex].dataset.capacity) || 0;
+            if (parseInt(cantidad) > cuposMax) {
+                alert(`La cantidad de personas no puede superar los cupos disponibles (${cuposMax}).`);
                 return false;
             }
 

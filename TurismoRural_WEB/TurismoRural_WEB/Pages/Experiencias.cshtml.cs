@@ -94,5 +94,30 @@ namespace TurismoRural_WEB.Pages
 
             return new JsonResult(experienciasEnriquecidas);
         }
+
+        public async Task<IActionResult> OnGetGetComunidades()
+        {
+            var comunidades = await _experienciasService.GetComunidadesAsync();
+            return new JsonResult(comunidades);
+        }
+
+        public async Task<IActionResult> OnPostCreate([FromBody] System.Text.Json.JsonElement experiencia)
+        {
+            var userId = HttpContext.Session.GetInt32("UsuarioId");
+            if (userId == null)
+                return new JsonResult(new { success = false, error = "No autenticado" });
+
+            var payload = new
+            {
+                titulo = experiencia.TryGetProperty("titulo", out var t) ? t.GetString() : null,
+                descripcion = experiencia.TryGetProperty("descripcion", out var d) ? d.GetString() : null,
+                categoria = experiencia.TryGetProperty("categoria", out var c) ? c.GetString() : null,
+                usuarioIdRegistrador = userId.Value,
+                iD_Comunidad = experiencia.TryGetProperty("iD_Comunidad", out var com) ? com.GetInt32() : 0
+            };
+
+            var result = await _experienciasService.CreateExperienciaAsync(payload);
+            return new JsonResult(new { success = result });
+        }
     }
 }

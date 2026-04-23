@@ -87,11 +87,28 @@
             <div id="crearMsg" style="margin-top:15px; display:none;"></div>
         </div>
     </div>
+
+    <div id="modalEliminar" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:40px; max-width:400px; width:90%;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:3rem; margin-bottom:12px;">🗑</div>
+                <h3 style="color:#dc2626; margin-bottom:8px;">Eliminar Sesión</h3>
+                <p style="color:#6b7280; margin:0;">¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.</p>
+            </div>
+            <input type="hidden" id="eliminarId" value="0" />
+            <div id="eliminarMsg" style="margin-bottom:15px; display:none;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="confirmarEliminar()" class="card-button" style="flex:1; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; border:none;">Eliminar</button>
+                <button onclick="cerrarModalEliminar()" class="card-button" style="flex:1; background:white; color:#6b7280; border:2px solid #e5e7eb;">Cancelar</button>
+            </div>
+        </div>
+    </div>
 }
 
 @section Scripts {
 <script>
     const esAdmin = document.getElementById('esAdmin').value === 'true';
+    const esLoggedIn = document.getElementById('esLoggedIn').value === 'true';
     const urlParams = new URLSearchParams(window.location.search);
     const experienciaId = parseInt(urlParams.get('experienciaId') || '0');
 
@@ -190,6 +207,10 @@
     }
 
     function reservar(concurrenciaId) {
+        if (!esLoggedIn) {
+            window.location.href = '/Account/Login';
+            return;
+        }
         window.location.href = '/Reservation/Create?concurrenciaId=' + concurrenciaId;
     }
 
@@ -259,7 +280,24 @@
     }
 
     async function eliminarSesion(id) {
-        if (!confirm('Esta seguro de que desea eliminar esta sesion?')) return;
+        document.getElementById('eliminarId').value = id;
+        const msg = document.getElementById('eliminarMsg');
+        msg.style.display = 'none';
+        msg.innerHTML = '';
+        const modal = document.getElementById('modalEliminar');
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModalEliminar() {
+        document.getElementById('modalEliminar').style.display = 'none';
+    }
+
+    async function confirmarEliminar() {
+        const id = document.getElementById('eliminarId').value;
+        const msg = document.getElementById('eliminarMsg');
+        const btn = document.querySelector('#modalEliminar button[onclick="confirmarEliminar()"]');
+        btn.disabled = true;
+        btn.textContent = 'Eliminando...';
         try {
             const token = document.querySelector('input[name="__RequestVerificationToken"]') ? document.querySelector('input[name="__RequestVerificationToken"]').value : '';
             const response = await fetch(window.location.pathname + '?handler=Delete&id=' + id, {
@@ -268,12 +306,19 @@
             });
             const result = await response.json();
             if (result.success) {
+                cerrarModalEliminar();
                 cargarSesiones();
             } else {
-                alert('No se pudo eliminar la sesion.');
+                msg.style.display = 'block';
+                msg.innerHTML = '<span style="color:#dc2626;">' + (result.error || 'No se pudo eliminar la sesión.') + '</span>';
+                btn.disabled = false;
+                btn.textContent = 'Eliminar';
             }
         } catch (error) {
-            alert('Error: ' + error.message);
+            msg.style.display = 'block';
+            msg.innerHTML = '<span style="color:#dc2626;">Error: ' + error.message + '</span>';
+            btn.disabled = false;
+            btn.textContent = 'Eliminar';
         }
     }
 
